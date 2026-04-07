@@ -30,6 +30,7 @@ export default function ProfilePage() {
       setPhone(parsed.phone || '');
       loadUserProfile(parsed.phone);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadUserProfile(p: string) {

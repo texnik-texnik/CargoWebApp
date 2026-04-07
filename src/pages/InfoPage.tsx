@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { DollarSign, Ban, MapPin, ChevronRight } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function InfoPage() {
   const sections = [

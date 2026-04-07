@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Search, ScanLine, History, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { supabase } from '../lib/supabase/client';
 
 export default function TracksPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [searchCode, setSearchCode] = useState(searchParams.get('code') || '');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -27,7 +27,9 @@ export default function TracksPage() {
       const localHistory = JSON.parse(localStorage.getItem('track_history') || '[]');
       setSearchHistory(localHistory);
     }
-    if (searchParams.get('code')) handleSearch(searchParams.get('code') || '');
+    const code = searchParams.get('code');
+    if (code) handleSearch(code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadSearchHistory(phone: string) {

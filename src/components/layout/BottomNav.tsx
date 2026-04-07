@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Package, User, Settings, LogIn } from 'lucide-react';
+import { Home, Package, User, Settings } from 'lucide-react';
 
 const navItems = [
   { icon: Home, label: 'Главная', href: '/' },

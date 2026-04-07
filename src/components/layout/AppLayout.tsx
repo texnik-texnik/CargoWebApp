@@ -12,17 +12,17 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const pathname = location.pathname;
-  const [isTelegram, setIsTelegram] = useState(false);
+  const [_isTelegram, setIsTelegram] = useState(false);
 
   useEffect(() => {
     // Проверяем, запущено ли в Telegram
     const tg = (window as any).Telegram?.WebApp;
     setIsTelegram(!!tg);
-    
+
     if (tg) {
       tg.ready();
       tg.expand();
-      
+
       // Применяем тему Telegram
       document.documentElement.style.setProperty(
         '--tg-theme-bg-color',
