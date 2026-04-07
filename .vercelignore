@@ -1,0 +1,11 @@
+# Игнорируем всё кроме webapp-react
+*
+!webapp-react/
+!webapp-react/**
+
+# Внутри webapp-react игнорируем
+webapp-react/node_modules/**
+webapp-react/.next/**
+webapp-react/.env.local
+webapp-react/database/scripts/**
+webapp-react/converted-tracks.csv
