@@ -21,7 +21,7 @@ export function BottomNav() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className={`flex flex-col items-center justify-center gap-1 transition-colors ${
                 isActive
                   ? 'text-primary'
@@ -34,7 +34,7 @@ export function BottomNav() {
           );
         })}
         <Link
-          href="/admin"
+          to="/admin"
           className="flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-primary"
         >
           <Settings className="h-6 w-6" />

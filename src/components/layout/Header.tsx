@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Truck, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +32,7 @@ export function Header() {
             <h1 className="text-lg font-bold">Khuroson Cargo</h1>
           </div>
           {user ? (
-            <Link href="/profile">
+            <Link to="/profile">
               <div className="flex items-center gap-2 cursor-pointer">
                 <Avatar className="h-8 w-8 border-2 border-white/20">
                   <AvatarImage src={user.photo_url} alt={user.name || user.first_name} />
@@ -46,7 +46,7 @@ export function Header() {
               </div>
             </Link>
           ) : (
-            <Link href="/auth">
+            <Link to="/auth">
               <Button variant="secondary" size="sm">
                 <User className="mr-2 h-4 w-4" />
                 Войти

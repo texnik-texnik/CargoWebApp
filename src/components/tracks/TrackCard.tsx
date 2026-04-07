@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { ChevronRight, Package } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,7 +41,7 @@ export function TrackCard({ track }: TrackCardProps) {
 
   return (
     <Link
-      href={`/tracks/${track.id}`}
+      to={`/tracks/${track.id}`}
       className="block transition-all hover:scale-[1.02] active:scale-[0.98]"
     >
       <Card className="hover:shadow-md">
