@@ -1,0 +1,81 @@
+name: Vercel Deploy Monitor
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  monitor-vercel-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Wait for Vercel Deploy
+        run: |
+          echo "Waiting 60 seconds for Vercel to start deployment..."
+          sleep 60
+
+      - name: Check Vercel Deploy Status
+        id: check_deploy
+        run: |
+          # Try to fetch the site to see if it's up
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://cargo-web-app-three.vercel.app)
+          echo "Site status: $STATUS"
+          echo "status=$STATUS" >> $GITHUB_OUTPUT
+          
+          if [ "$STATUS" = "200" ]; then
+            echo "✅ Deployment successful!"
+            echo "result=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Deployment may still be in progress or failed"
+            echo "result=pending_or_failed" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Deploy Log
+        run: |
+          mkdir -p deploy-logs
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          COMMIT_SHA=${{ github.sha }}
+          
+          cat > deploy-logs/deploy-${{ github.run_number }}.md << EOF
+          # Vercel Deploy Log - $TIMESTAMP
+          
+          **Commit**: [$COMMIT_SHA](https://github.com/${{ github.repository }}/commit/$COMMIT_SHA)
+          **Branch**: ${{ github.ref_name }}
+          **Triggered by**: ${{ github.actor }}
+          
+          ## Status
+          - Site Response: ${{ steps.check_deploy.outputs.status }}
+          - Result: ${{ steps.check_deploy.outputs.result }}
+          
+          ## Links
+          - [Vercel Dashboard](https://vercel.com/dashboard)
+          - [Live Site](https://cargo-web-app-three.vercel.app)
+          - [Commit](https://github.com/${{ github.repository }}/commit/$COMMIT_SHA)
+          EOF
+
+      - name: Upload Deploy Log
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log-${{ github.run_number }}
+          path: deploy-logs/
+
+      - name: Comment on Commit
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const status = '${{ steps.check_deploy.outputs.result }}';
+            const message = status === 'success' 
+              ? '✅ **Vercel Deploy Successful!**\n\nSite is live: https://cargo-web-app-three.vercel.app'
+              : '⏳ **Vercel Deploy in Progress...**\n\nCheck status: https://vercel.com/dashboard';
+            
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: message
+            });
