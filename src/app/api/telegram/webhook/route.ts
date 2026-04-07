@@ -79,8 +79,8 @@ export async function POST(request: NextRequest) {
           .limit(1)
         
         let nextNumber = 1001
-        if (lastUser?.client_id) {
-          const num = parseInt(lastUser.client_id.replace('KH-', ''), 10)
+        if (lastUser && lastUser.length > 0 && lastUser[0].client_id) {
+          const num = parseInt(lastUser[0].client_id.replace('KH-', ''), 10)
           if (!isNaN(num)) nextNumber = num + 1
         }
 

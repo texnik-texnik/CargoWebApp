@@ -106,7 +106,9 @@ export async function POST(request: NextRequest) {
     // Удаляем дубликаты - оставляем последнюю версию каждого кода
     const uniqueTracks = new Map()
     tracksToInsert.forEach(track => {
-      uniqueTracks.set(track.code, track)
+      if (track) {
+        uniqueTracks.set(track.code, track)
+      }
     })
     
     const finalTracks = Array.from(uniqueTracks.values())

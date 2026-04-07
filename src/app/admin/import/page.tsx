@@ -178,7 +178,7 @@ export default function AdminImportPage() {
               <div className="flex flex-wrap gap-2">
                 {Object.entries(result.stats || {}).map(([status, count]) => (
                   <Badge key={status} variant="secondary">
-                    {statusLabels[status] || status}: {count}
+                    {statusLabels[status] || status}: {String(count)}
                   </Badge>
                 ))}
               </div>
