@@ -1,18 +1,13 @@
 # Dependencies
 node_modules
-/.pnp
+.pnp
 .pnp.js
 
 # Testing
-/coverage
-
-# Next.js
-/.next/
-/out/
-next-env.d.ts
+coverage
 
 # Production
-/build
+build
 
 # Misc
 .DS_Store
@@ -26,16 +21,12 @@ yarn-error.log*
 # Local env files
 .env*.local
 .env
-.env.development.local
-.env.test.local
-.env.production.local
 
 # Vercel
 .vercel
 
 # TypeScript
 *.tsbuildinfo
-next-tsconfig.json
 
 # IDE
 .vscode/
@@ -47,5 +38,6 @@ next-tsconfig.json
 # OS
 Thumbs.db
 
-# Logs
-*.log
+# Old Next.js files
+.next/
+out/
