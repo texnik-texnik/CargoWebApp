@@ -53,11 +53,6 @@
 ### shadcn/ui Components
 `alert`, `avatar`, `badge`, `button`, `card`, `dialog`, `input`, `label`, `select`, `separator`, `skeleton`, `table`, `tabs`
 
-### Layout Components
-- `src/components/layout/AppLayout.tsx` — Main layout wrapper with Header and BottomNav
-- `src/components/layout/Header.tsx` — Top bar with login button
-- `src/components/layout/BottomNav.tsx` — Bottom navigation (Home, Tracks, Profile, Admin)
-
 ### Key Files
 - `src/index.tsx` — Entry point, wraps App in BrowserRouter
 - `src/App.tsx` — Routes definition
