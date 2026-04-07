@@ -2,8 +2,8 @@
 
 import { Link } from 'react-router-dom';
 import { ChevronRight, Package } from 'lucide-react';
-import { Badge } from '../components/ui/badge';
-import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../ui/badge';
+import { Card, CardContent } from '../ui/card';
 
 interface TrackCardProps {
   track: {
