@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,7 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/lib/supabase/client';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
@@ -33,11 +32,9 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Загружаем пользователя из localStorage (после авторизации)
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
-      setUser(parsed);
       setPhone(parsed.phone || '');
       loadUserProfile(parsed.phone);
     }
@@ -55,7 +52,6 @@ export default function ProfilePage() {
       if (data) {
         setUserData(data);
         setName(data.name || '');
-        setPhone(data.phone || phone);
         setLang(data.lang || 'ru');
         await loadMyTracks(data.history);
       }
@@ -66,13 +62,12 @@ export default function ProfilePage() {
 
   async function loadMyTracks(history: string) {
     if (!history) return;
-    
     setLoadingTracks(true);
     try {
       const trackCodes = history.split(',').filter(Boolean);
       if (trackCodes.length === 0) return;
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('tracks')
         .select('*')
         .in('code', trackCodes.slice(0, 10));
@@ -86,28 +81,26 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
-    if (!user || !name.trim() || !phone.trim()) return;
+    if (!phone || !name.trim()) return;
 
     setSaving(true);
     try {
       const { error } = await supabase
         .from('users')
-        .upsert({ 
-          phone,
-          name, 
-          lang 
-        })
+        .update({ name: name.trim(), lang })
         .eq('phone', phone);
 
       if (error) throw error;
 
       setEditing(false);
+      // Перезагружаем
       await loadUserProfile(phone);
-      
       // Обновляем localStorage
-      const updatedUser = { ...user, name };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      const updated = { phone, name: name.trim(), lang };
+      localStorage.setItem('user', JSON.stringify({
+        ...JSON.parse(localStorage.getItem('user') || '{}'),
+        ...updated,
+      }));
     } catch (error: any) {
       console.error('Error saving profile:', error);
     } finally {
@@ -121,14 +114,14 @@ export default function ProfilePage() {
     else window.location.href = '/';
   }
 
-  // Генерируем адрес Китая
-  const chinaAddress = userData?.name 
-    ? `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门-khuroson-${userData.name.toLowerCase().replace(/\s+/g, '-')}-${(userData.phone || '').replace('+992', '')}`
-    : `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门`;
+  // Адрес Китая
+  const phoneWithoutCountry = (userData?.phone || '').replace('+992', '').replace(/\s/g, '');
+  const nameSlug = (userData?.name || 'user').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const chinaAddress = `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门-Khuroson-${nameSlug}-${phoneWithoutCountry}`;
+  const fullAddress = `联系人：khuroson-cargo\n联系电话：19524101010\n收货地址：${chinaAddress}`;
 
   const copyAddress = async () => {
     try {
-      const fullAddress = `联系人：khuroson-cargo\n联系电话：19524101010\n收货地址：${chinaAddress}`;
       await navigator.clipboard.writeText(fullAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -138,26 +131,16 @@ export default function ProfilePage() {
   };
 
   const statusLabels: Record<string, string> = {
-    waiting: 'Ожидание',
-    received: 'Получен',
-    intransit: 'В пути',
-    border: 'На границе',
-    warehouse: 'На складе',
-    payment: 'Оплата',
-    delivered: 'Доставлен',
+    waiting: 'Ожидание', received: 'Получен', intransit: 'В пути',
+    border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен',
   };
 
   const statusColors: Record<string, string> = {
-    waiting: 'bg-yellow-500',
-    received: 'bg-blue-500',
-    intransit: 'bg-indigo-500',
-    border: 'bg-orange-500',
-    warehouse: 'bg-purple-500',
-    payment: 'bg-green-500',
-    delivered: 'bg-emerald-500',
+    waiting: 'bg-yellow-500', received: 'bg-blue-500', intransit: 'bg-indigo-500',
+    border: 'bg-orange-500', warehouse: 'bg-purple-500', payment: 'bg-green-500', delivered: 'bg-emerald-500',
   };
 
-  if (!user) {
+  if (!userData) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -181,19 +164,18 @@ export default function ProfilePage() {
           <TabsTrigger value="tracks">Мои треки</TabsTrigger>
         </TabsList>
 
-        {/* Вкладка Профиль */}
+        {/* === ПРОФИЛЬ === */}
         <TabsContent value="profile">
-          {/* Аватар и основная информация */}
           <Card className="mb-4">
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
                   <AvatarFallback className="bg-primary text-2xl font-bold text-primary-foreground">
-                    {(name || user.name || '?').charAt(0).toUpperCase()}
+                    {(name || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-xl font-semibold">{name || user.name || 'Пользователь'}</h3>
+                  <h3 className="text-xl font-semibold">{name || 'Введите имя'}</h3>
                   <p className="text-sm text-muted-foreground">{phone}</p>
                   {userData?.client_id && (
                     <Badge className="mt-2">{userData.client_id}</Badge>
@@ -203,7 +185,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Форма профиля */}
           <Card>
             <CardHeader>
               <CardTitle>Информация профиля</CardTitle>
@@ -233,13 +214,7 @@ export default function ProfilePage() {
                     <Phone className="h-4 w-4" />
                     Телефон
                   </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    disabled
-                    className="mt-2"
-                  />
+                  <Input id="phone" type="tel" value={phone} disabled className="mt-2" />
                 </div>
 
                 <Separator />
@@ -251,7 +226,7 @@ export default function ProfilePage() {
                   </Label>
                   <Select value={lang} onValueChange={setLang} disabled={!editing}>
                     <SelectTrigger id="language" className="mt-2">
-                      <SelectValue placeholder="Выберите язык" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ru">Русский</SelectItem>
@@ -268,14 +243,10 @@ export default function ProfilePage() {
                       <Save className="mr-2 h-4 w-4" />
                       {saving ? 'Сохранение...' : 'Сохранить'}
                     </Button>
-                    <Button variant="outline" onClick={() => setEditing(false)}>
-                      Отмена
-                    </Button>
+                    <Button variant="outline" onClick={() => setEditing(false)}>Отмена</Button>
                   </>
                 ) : (
-                  <Button onClick={() => setEditing(true)} className="flex-1">
-                    Редактировать
-                  </Button>
+                  <Button onClick={() => setEditing(true)} className="flex-1">Редактировать</Button>
                 )}
               </div>
             </CardContent>
@@ -287,14 +258,12 @@ export default function ProfilePage() {
           </Button>
         </TabsContent>
 
-        {/* Вкладка Адрес Китая */}
+        {/* === АДРЕС КИТАЯ === */}
         <TabsContent value="address">
           <Card>
             <CardHeader>
               <CardTitle>Адрес склада в Китае</CardTitle>
-              <CardDescription>
-                Используйте этот адрес для доставки грузов
-              </CardDescription>
+              <CardDescription>Используйте этот адрес для доставки грузов</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg bg-muted p-4 font-mono text-sm space-y-2">
@@ -305,15 +274,9 @@ export default function ProfilePage() {
 
               <Button onClick={copyAddress} className="w-full" variant="outline">
                 {copied ? (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Скопировано!
-                  </>
+                  <><Check className="mr-2 h-4 w-4" /> Скопировано!</>
                 ) : (
-                  <>
-                    <Copy className="mr-2 h-4 w-4" />
-                    Копировать адрес
-                  </>
+                  <><Copy className="mr-2 h-4 w-4" /> Копировать адрес</>
                 )}
               </Button>
 
@@ -327,7 +290,7 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* Вкладка Мои треки */}
+        {/* === МОИ ТРЕКИ === */}
         <TabsContent value="tracks">
           <Card>
             <CardHeader>
@@ -345,22 +308,20 @@ export default function ProfilePage() {
               ) : myTracks.length > 0 ? (
                 <div className="space-y-2">
                   {myTracks.map((track) => (
-                    <Link
-                      key={track.id}
-                      href={`/tracks?code=${track.code}`}
-                      className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent"
-                    >
-                      <div>
-                        <p className="font-semibold">{track.code}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {track.updated_at ? new Date(track.updated_at).toLocaleDateString('ru-RU') : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={`${statusColors[track.status] || 'bg-gray-500'} text-white`}>
-                          {statusLabels[track.status] || track.status}
-                        </Badge>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    <Link key={track.id} href={`/tracks?code=${track.code}`}>
+                      <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent cursor-pointer">
+                        <div>
+                          <p className="font-semibold">{track.code}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {track.updated_at ? new Date(track.updated_at).toLocaleDateString('ru-RU') : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`${statusColors[track.status] || 'bg-gray-500'} text-white`}>
+                            {statusLabels[track.status] || track.status}
+                          </Badge>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        </div>
                       </div>
                     </Link>
                   ))}
@@ -369,12 +330,8 @@ export default function ProfilePage() {
                 <div className="py-8 text-center">
                   <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">У вас пока нет треков</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Начните с поиска по трек-номеру
-                  </p>
-                  <Link href="/tracks">
-                    <Button>Найти трек</Button>
-                  </Link>
+                  <p className="text-sm text-muted-foreground mb-4">Начните с поиска по трек-номеру</p>
+                  <Link href="/tracks"><Button>Найти трек</Button></Link>
                 </div>
               )}
             </CardContent>

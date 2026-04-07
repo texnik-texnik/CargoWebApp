@@ -32,34 +32,11 @@ export async function POST(request: NextRequest) {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // /start — просим имя
+    // /start
     if (text === '/start') {
       await sendTelegramMessage(
         chatId,
-        `👋 Добро пожаловать в Khuroson Cargo!\n\nВведите ваше <b>имя латинскими буквами</b>.\n\nПример: <b>Ali Valiyev</b>`,
-        { force_reply: true, input_field_placeholder: 'Ali Valiyev' }
-      )
-      return new NextResponse('ok')
-    }
-
-    // Проверяем — это имя (нет phone)?
-    const { data: pendingUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('telegram_chat_id', String(chatId))
-      .is('phone', null)
-      .maybeSingle()
-
-    if (pendingUser) {
-      await supabase
-        .from('users')
-        .update({ name: text })
-        .eq('telegram_chat_id', String(chatId))
-        .is('phone', null)
-
-      await sendTelegramMessage(
-        chatId,
-        `✅ Отлично, ${text}!\n\nТеперь введите ваш <b>номер телефона</b>.\n\nФормат: <b>+992XXXXXXXXX</b>`,
+        `👋 Добро пожаловать в Khuroson Cargo!\n\nВведите ваш <b>номер телефона</b> для входа.\n\nФормат: <b>+992XXXXXXXXX</b>`,
         { force_reply: true, input_field_placeholder: '+992...' }
       )
       return new NextResponse('ok')
@@ -130,8 +107,8 @@ export async function POST(request: NextRequest) {
     // Непонятный ввод
     await sendTelegramMessage(
       chatId,
-      `⚠️ Пожалуйста, введите:\n\n• <b>Имя латиницей</b> (если вы новый пользователь)\n• или <b>+992XXXXXXXXX</b> (для входа)`,
-      { force_reply: true, input_field_placeholder: 'Ivan или +992...' }
+      `⚠️ Введите корректный номер телефона.\n\nПример: <b>+992927848483</b>`,
+      { force_reply: true, input_field_placeholder: '+992...' }
     )
 
     return new NextResponse('ok')

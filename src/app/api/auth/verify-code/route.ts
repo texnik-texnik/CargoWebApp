@@ -15,9 +15,9 @@ async function generateClientNumber(supabase: any): Promise<string> {
     .limit(1)
 
   let nextNumber = 1001
-  
-  if (lastUser && lastUser.client_id) {
-    const lastNumber = parseInt(lastUser.client_id.replace('KH-', ''), 10)
+
+  if (lastUser && lastUser.length > 0 && lastUser[0].client_id) {
+    const lastNumber = parseInt(lastUser[0].client_id.replace('KH-', ''), 10)
     if (!isNaN(lastNumber)) {
       nextNumber = lastNumber + 1
     }

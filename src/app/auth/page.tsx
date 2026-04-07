@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Phone, Key, CheckCircle, Loader2, ArrowLeft, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +15,13 @@ const TELEGRAM_BOT_URL = 'https://t.me/JinjakBot';
 
 export default function AuthPage() {
   const router = useRouter();
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
+  const [step, setStep] = useState<'phone' | 'code' | 'name'>('phone');
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRegistration, setIsRegistration] = useState(false);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -63,7 +65,53 @@ export default function AuthPage() {
         throw new Error(data.error || 'Ошибка верификации');
       }
 
+      // Если новая регистрация — просим имя
+      if (data.isNew) {
+        setIsRegistration(true);
+        setStep('name');
+        localStorage.setItem('temp_user', JSON.stringify(data.user));
+        return;
+      }
+
+      // Вход существующего
       localStorage.setItem('user', JSON.stringify(data.user));
+      router.push('/');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const tempUser = JSON.parse(localStorage.getItem('temp_user') || '{}');
+      const cleanPhone = phone.replace(/\D/g, '');
+      const formattedPhone = cleanPhone.startsWith('992') ? `+${cleanPhone}` : `+992${cleanPhone}`;
+
+      // Сохраняем имя
+      const response = await fetch('/api/auth/save-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: formattedPhone,
+          name: name.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Ошибка сохранения имени');
+      }
+
+      const data = await response.json();
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.removeItem('temp_user');
       router.push('/');
     } catch (err: any) {
       setError(err.message);
@@ -77,106 +125,97 @@ export default function AuthPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">
-            {step === 'phone' ? 'Вход в приложение' : 'Введите код'}
+            {step === 'phone' ? 'Вход' : step === 'code' ? 'Код подтверждения' : 'Ваше имя'}
           </CardTitle>
           <CardDescription>
-            {step === 'phone' 
-              ? 'Введите номер телефона' 
-              : 'Код полученный от @JinjakBot'}
+            {step === 'phone' ? 'Введите номер телефона'
+              : step === 'code' ? 'Код из @JinjakBot'
+              : 'Введите имя латинскими буквами'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Шаг 1: Номер телефона */}
+          {/* Шаг 1: Телефон */}
           {step === 'phone' && (
             <form onSubmit={handlePhoneSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="phone">Номер телефона</Label>
                 <div className="relative mt-2">
                   <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
+                  <Input id="phone" type="tel" value={phone}
                     onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    placeholder="+992 XX XXX XX XX"
-                    className="pl-10"
-                    required
-                    autoFocus
-                  />
+                    placeholder="+992 XX XXX XX XX" className="pl-10" required autoFocus />
                 </div>
               </div>
 
               <Button type="submit" disabled={phone.length < 13} className="w-full">
-                <Key className="mr-2 h-4 w-4" />
-                Получить код
+                <Key className="mr-2 h-4 w-4" /> Получить код
               </Button>
 
               <Separator />
 
               <Link href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full">
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Открыть @JinjakBot
+                  <ExternalLink className="mr-2 h-4 w-4" /> Открыть @JinjakBot
                 </Button>
               </Link>
 
               <p className="text-center text-xs text-muted-foreground">
                 1. Откройте бота и введите номер<br/>
                 2. Бот пришлёт 4-значный код<br/>
-                3. Введите код на следующем шаге
+                3. Введите код ниже
               </p>
             </form>
           )}
 
-          {/* Шаг 2: Код подтверждения */}
+          {/* Шаг 2: Код */}
           {step === 'code' && (
             <form onSubmit={handleCodeSubmit} className="space-y-4">
               <div>
                 <Label htmlFor="code">4-значный код</Label>
                 <div className="relative mt-2">
                   <Key className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="code"
-                    type="text"
-                    value={code}
+                  <Input id="code" type="text" value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="0000"
-                    className="pl-10 text-center text-2xl tracking-widest"
-                    maxLength={4}
-                    required
-                    autoFocus
-                  />
+                    placeholder="0000" className="pl-10 text-center text-2xl tracking-widest"
+                    maxLength={4} required autoFocus />
                 </div>
               </div>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+              {error && (<Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>)}
 
               <Button type="submit" disabled={loading || code.length !== 4} className="w-full">
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Вход...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Войти
-                  </>
-                )}
+                {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Проверка...</>)
+                  : (<><CheckCircle className="mr-2 h-4 w-4" /> Войти</>)}
               </Button>
 
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => { setStep('phone'); setCode(''); }}
-                className="w-full"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Назад
+              <Button type="button" variant="ghost"
+                onClick={() => { setStep('phone'); setCode(''); }} className="w-full">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Назад
+              </Button>
+            </form>
+          )}
+
+          {/* Шаг 3: Имя (только при регистрации) */}
+          {step === 'name' && (
+            <form onSubmit={handleNameSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Имя (латиницей)</Label>
+                <div className="relative mt-2">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="name" type="text" value={name}
+                    onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
+                    placeholder="Ali Valiyev" className="pl-10" required autoFocus />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Это имя будет использоваться в адресе склада в Китае
+                </p>
+              </div>
+
+              {error && (<Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>)}
+
+              <Button type="submit" disabled={loading || !name.trim()} className="w-full">
+                {loading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Регистрация...</>)
+                  : (<><CheckCircle className="mr-2 h-4 w-4" /> Завершить регистрацию</>)}
               </Button>
             </form>
           )}
