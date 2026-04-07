@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Phone, Globe, Save, LogOut, Package, ChevronRight } from 'lucide-react';
+import { User, Phone, Globe, Save, LogOut, Package, ChevronRight, Copy, Check } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,52 +30,32 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [myTracks, setMyTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user) {
-      setUser(tg.initDataUnsafe.user);
-      loadUserProfile(String(tg.initDataUnsafe.user.id));
+    // Загружаем пользователя из localStorage (после авторизации)
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const parsed = JSON.parse(savedUser);
+      setUser(parsed);
+      setPhone(parsed.phone || '');
+      loadUserProfile(parsed.phone);
     }
   }, []);
 
-  async function loadUserProfile(telegramId: string) {
+  async function loadUserProfile(phone: string) {
+    if (!phone) return;
     try {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('telegram_id', telegramId)
+        .eq('phone', phone)
         .single();
 
-      if (error && error.code === 'PGRST116') {
-        console.log('User not found, creating new user...');
-        const newUser = {
-          telegram_id: telegramId,
-          name: user?.first_name || 'Пользователь',
-          phone: '',
-          lang: 'ru',
-        };
-
-        const { data: createdUser, error: createError } = await supabase
-          .from('users')
-          .insert(newUser)
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating user:', createError);
-          return;
-        }
-
-        setUserData(createdUser);
-        setName(createdUser.name || '');
-        setPhone(createdUser.phone || '');
-        setLang(createdUser.lang || 'ru');
-        await loadMyTracks(createdUser.history);
-      } else if (data) {
+      if (data) {
         setUserData(data);
         setName(data.name || '');
-        setPhone(data.phone || '');
+        setPhone(data.phone || phone);
         setLang(data.lang || 'ru');
         await loadMyTracks(data.history);
       }
@@ -97,9 +77,7 @@ export default function ProfilePage() {
         .select('*')
         .in('code', trackCodes.slice(0, 10));
 
-      if (data) {
-        setMyTracks(data);
-      }
+      if (data) setMyTracks(data);
     } catch (error) {
       console.error('Error loading my tracks:', error);
     } finally {
@@ -115,18 +93,21 @@ export default function ProfilePage() {
       const { error } = await supabase
         .from('users')
         .upsert({ 
-          telegram_id: user.id,
+          phone,
           name, 
-          phone, 
           lang 
         })
-        .eq('telegram_id', user.id);
+        .eq('phone', phone);
 
       if (error) throw error;
 
       setEditing(false);
-      // Перезагружаем профиль
-      await loadUserProfile(String(user.id));
+      await loadUserProfile(phone);
+      
+      // Обновляем localStorage
+      const updatedUser = { ...user, name };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
     } catch (error: any) {
       console.error('Error saving profile:', error);
     } finally {
@@ -134,12 +115,27 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleLogout() {
+  function handleLogout() {
     const tg = (window as any).Telegram?.WebApp;
-    if (tg) {
-      tg.close();
-    }
+    if (tg) tg.close();
+    else window.location.href = '/';
   }
+
+  // Генерируем адрес Китая
+  const chinaAddress = userData?.name 
+    ? `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门-khuroson-${userData.name.toLowerCase().replace(/\s+/g, '-')}-${(userData.phone || '').replace('+992', '')}`
+    : `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门`;
+
+  const copyAddress = async () => {
+    try {
+      const fullAddress = `联系人：khuroson-cargo\n联系电话：19524101010\n收货地址：${chinaAddress}`;
+      await navigator.clipboard.writeText(fullAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error('Copy failed:', e);
+    }
+  };
 
   const statusLabels: Record<string, string> = {
     waiting: 'Ожидание',
@@ -179,155 +175,156 @@ export default function ProfilePage() {
       </div>
 
       <Tabs defaultValue="profile" className="mb-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Профиль</TabsTrigger>
+          <TabsTrigger value="address">Адрес</TabsTrigger>
           <TabsTrigger value="tracks">Мои треки</TabsTrigger>
         </TabsList>
 
         {/* Вкладка Профиль */}
         <TabsContent value="profile">
-
-        {/* Аватар */}
-        <Card className="mb-4">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user.photo_url} alt={user.first_name} />
-                <AvatarFallback className="bg-primary text-2xl font-bold text-primary-foreground">
-                  {user.first_name?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-xl font-semibold">
-                  {user.first_name} {user.last_name || ''}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  ID: {user.id}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Форма профиля */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Информация профиля</CardTitle>
-            <CardDescription>
-              Управляйте вашими персональными данными
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Имя */}
-              <div>
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Имя
-                </Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  disabled={!editing}
-                  placeholder="Ваше имя"
-                  className="mt-2"
-                />
-              </div>
-
-              <Separator />
-
-              {/* Телефон */}
-              <div>
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Телефон
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  disabled={!editing}
-                  placeholder="+992 XXX XX XX XX"
-                  className="mt-2"
-                />
-              </div>
-
-              <Separator />
-
-              {/* Язык */}
-              <div>
-                <Label htmlFor="language" className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Язык
-                </Label>
-                <Select
-                  value={lang}
-                  onValueChange={setLang}
-                  disabled={!editing}
-                >
-                  <SelectTrigger id="language" className="mt-2">
-                    <SelectValue placeholder="Выберите язык" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ru">Русский</SelectItem>
-                    <SelectItem value="tj">Тоҷикӣ</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Кнопки */}
-            <div className="mt-6 flex gap-2">
-              {editing ? (
-                <>
-                  <Button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex-1"
-                  >
-                    <Save className="mr-2 h-4 w-4" />
-                    {saving ? 'Сохранение...' : 'Сохранить'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setEditing(false)}
-                  >
-                    Отмена
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => setEditing(true)}
-                  className="flex-1"
-                >
-                  Редактировать
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Client ID */}
-        {userData?.client_id && (
-          <Card className="mt-4">
+          {/* Аватар и основная информация */}
+          <Card className="mb-4">
             <CardContent className="pt-6">
-              <p className="text-sm text-muted-foreground">Client ID</p>
-              <p className="text-lg font-mono font-bold">{userData.client_id}</p>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback className="bg-primary text-2xl font-bold text-primary-foreground">
+                    {(name || user.name || '?').charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-semibold">{name || user.name || 'Пользователь'}</h3>
+                  <p className="text-sm text-muted-foreground">{phone}</p>
+                  {userData?.client_id && (
+                    <Badge className="mt-2">{userData.client_id}</Badge>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Кнопка выхода */}
-        <Button
-          variant="destructive"
-          onClick={handleLogout}
-          className="mt-6 w-full"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Закрыть приложение
-        </Button>
+          {/* Форма профиля */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Информация профиля</CardTitle>
+              <CardDescription>Управляйте вашими персональными данными</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Имя (латиницей)
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={!editing}
+                    placeholder="Ivan Ivanov"
+                    className="mt-2"
+                  />
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label htmlFor="phone" className="flex items-center gap-2">
+                    <Phone className="h-4 w-4" />
+                    Телефон
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    disabled
+                    className="mt-2"
+                  />
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label htmlFor="language" className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Язык
+                  </Label>
+                  <Select value={lang} onValueChange={setLang} disabled={!editing}>
+                    <SelectTrigger id="language" className="mt-2">
+                      <SelectValue placeholder="Выберите язык" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ru">Русский</SelectItem>
+                      <SelectItem value="tj">Тоҷикӣ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="mt-6 flex gap-2">
+                {editing ? (
+                  <>
+                    <Button onClick={handleSave} disabled={saving} className="flex-1">
+                      <Save className="mr-2 h-4 w-4" />
+                      {saving ? 'Сохранение...' : 'Сохранить'}
+                    </Button>
+                    <Button variant="outline" onClick={() => setEditing(false)}>
+                      Отмена
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={() => setEditing(true)} className="flex-1">
+                    Редактировать
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Button variant="destructive" onClick={handleLogout} className="mt-6 w-full">
+            <LogOut className="mr-2 h-4 w-4" />
+            Выйти
+          </Button>
+        </TabsContent>
+
+        {/* Вкладка Адрес Китая */}
+        <TabsContent value="address">
+          <Card>
+            <CardHeader>
+              <CardTitle>Адрес склада в Китае</CardTitle>
+              <CardDescription>
+                Используйте этот адрес для доставки грузов
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg bg-muted p-4 font-mono text-sm space-y-2">
+                <p><span className="text-muted-foreground">联系人：</span>khuroson-cargo</p>
+                <p><span className="text-muted-foreground">联系电话：</span>19524101010</p>
+                <p><span className="text-muted-foreground">收货地址：</span>{chinaAddress}</p>
+              </div>
+
+              <Button onClick={copyAddress} className="w-full" variant="outline">
+                {copied ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Скопировано!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Копировать адрес
+                  </>
+                )}
+              </Button>
+
+              <div className="text-sm text-muted-foreground">
+                <p className="font-medium mb-1">Как использовать:</p>
+                <p>1. Скопируйте полный адрес</p>
+                <p>2. Отправьте продавцу в Китае</p>
+                <p>3. Груз будет доставлен на наш склад</p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Вкладка Мои треки */}
@@ -338,9 +335,7 @@ export default function ProfilePage() {
                 <Package className="h-5 w-5" />
                 Мои треки
               </CardTitle>
-              <CardDescription>
-                Треки которые вы искали недавно
-              </CardDescription>
+              <CardDescription>Треки которые вы искали недавно</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingTracks ? (

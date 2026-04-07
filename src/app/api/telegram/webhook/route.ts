@@ -5,21 +5,14 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Генерация 4-значного кода
 function generateCode(): string {
   return Math.floor(1000 + Math.random() * 9000).toString()
 }
 
-// Отправка сообщения
 async function sendTelegramMessage(chatId: string, text: string, reply_markup?: any) {
   const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`
-  const body: any = {
-    chat_id: chatId,
-    text,
-    parse_mode: 'HTML',
-  }
+  const body: any = { chat_id: chatId, text, parse_mode: 'HTML' }
   if (reply_markup) body.reply_markup = reply_markup
-
   await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -31,53 +24,69 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const update = body
-    
     if (!update.message) return new NextResponse('ok')
 
     const chatId = update.message.chat.id
     const text = update.message.text?.trim()
-    const firstName = update.message.from?.first_name || 'Пользователь'
-
     if (!text) return new NextResponse('ok')
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Команда /start
+    // /start — просим имя
     if (text === '/start') {
       await sendTelegramMessage(
         chatId,
-        `👋 Здравствуйте, ${firstName}!\n\nДля входа в приложение введите ваш номер телефона.\n\nФормат: <b>+992XXXXXXXXX</b>`,
+        `👋 Добро пожаловать в Khuroson Cargo!\n\nВведите ваше <b>имя латинскими буквами</b>.\n\nПример: <b>Ali Valiyev</b>`,
+        { force_reply: true, input_field_placeholder: 'Ali Valiyev' }
+      )
+      return new NextResponse('ok')
+    }
+
+    // Проверяем — это имя (нет phone)?
+    const { data: pendingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('telegram_chat_id', String(chatId))
+      .is('phone', null)
+      .maybeSingle()
+
+    if (pendingUser) {
+      await supabase
+        .from('users')
+        .update({ name: text })
+        .eq('telegram_chat_id', String(chatId))
+        .is('phone', null)
+
+      await sendTelegramMessage(
+        chatId,
+        `✅ Отлично, ${text}!\n\nТеперь введите ваш <b>номер телефона</b>.\n\nФормат: <b>+992XXXXXXXXX</b>`,
         { force_reply: true, input_field_placeholder: '+992...' }
       )
       return new NextResponse('ok')
     }
 
-    // Проверка является ли текст номером телефона
+    // Проверка номера телефона
     const phoneMatch = text.match(/^\+?992\d{9}$/)
-    
+
     if (phoneMatch) {
       const phone = text.startsWith('+') ? text : `+${text}`
-      
-      // Генерируем код
       const code = generateCode()
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000)
 
-      // Проверяем/создаём пользователя
       const { data: existingUser } = await supabase
         .from('users')
-        .select('id')
+        .select('*')
         .eq('phone', phone)
         .single()
 
       if (!existingUser) {
-        // Создаём нового пользователя
         const { data: lastUser } = await supabase
           .from('users')
           .select('client_id')
           .not('client_id', 'is', null)
           .order('created_at', { ascending: false })
           .limit(1)
-        
+
         let nextNumber = 1001
         if (lastUser && lastUser.length > 0 && lastUser[0].client_id) {
           const num = parseInt(lastUser[0].client_id.replace('KH-', ''), 10)
@@ -86,7 +95,7 @@ export async function POST(request: NextRequest) {
 
         await supabase.from('users').insert({
           phone,
-          name: firstName,
+          name: '',
           client_id: `KH-${nextNumber}`,
           telegram_chat_id: String(chatId),
           telegram_id: String(update.message.from.id),
@@ -94,7 +103,6 @@ export async function POST(request: NextRequest) {
           verification_expires: expiresAt.toISOString(),
         })
       } else {
-        // Обновляем код для существующего
         await supabase
           .from('users')
           .update({
@@ -115,15 +123,15 @@ export async function POST(request: NextRequest) {
         `⏰ Действует 10 минут\n` +
         `Введите этот код в приложении.`
       )
-      
+
       return new NextResponse('ok')
     }
 
-    // Если введено что-то другое
+    // Непонятный ввод
     await sendTelegramMessage(
       chatId,
-      `⚠️ Пожалуйста, введите корректный номер телефона.\n\nПример: <b>+992927848483</b>`,
-      { force_reply: true, input_field_placeholder: '+992...' }
+      `⚠️ Пожалуйста, введите:\n\n• <b>Имя латиницей</b> (если вы новый пользователь)\n• или <b>+992XXXXXXXXX</b> (для входа)`,
+      { force_reply: true, input_field_placeholder: 'Ivan или +992...' }
     )
 
     return new NextResponse('ok')
