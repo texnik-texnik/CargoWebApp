@@ -12,7 +12,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const pathname = location.pathname;
-  const [_isTelegram, setIsTelegram] = useState(false);
+  const [isTelegram, setIsTelegram] = useState(false);
 
   useEffect(() => {
     // Проверяем, запущено ли в Telegram
@@ -35,7 +35,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const hideNav = pathname?.startsWith('/admin');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isTelegram ? 'telegram-webapp' : ''}`}>
       <Header />
       <main className="pb-20 pt-16">
         {children}
