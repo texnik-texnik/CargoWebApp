@@ -22,13 +22,18 @@ export default function ProfilePage() {
   const [myTracks, setMyTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
       setPhone(parsed.phone || '');
+      setIsAuthenticated(true);
       loadUserProfile(parsed.phone);
+    } else {
+      // Пользователь не авторизован
+      setIsAuthenticated(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -86,7 +91,26 @@ export default function ProfilePage() {
   const statusLabels: Record<string, string> = { waiting: 'Ожидание', received: 'Получен', intransit: 'В пути', border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен' };
   const statusColors: Record<string, string> = { waiting: 'bg-yellow-500', received: 'bg-blue-500', intransit: 'bg-indigo-500', border: 'bg-orange-500', warehouse: 'bg-purple-500', payment: 'bg-green-500', delivered: 'bg-emerald-500' };
 
-  if (!userData) return <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  // Не авторизован - показываем сообщение
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-2xl">
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <User className="h-20 w-20 mb-4 text-muted-foreground" />
+          <h2 className="text-2xl font-bold mb-2">Войдите в профиль</h2>
+          <p className="text-muted-foreground mb-6">Для доступа к профилю необходимо авторизоваться через Telegram</p>
+          <Link to="/auth">
+            <Button>Войти</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Загрузка профиля
+  if (!userData) {
+    return <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
