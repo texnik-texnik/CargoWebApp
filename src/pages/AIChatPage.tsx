@@ -1,4 +1,3 @@
-import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -10,7 +9,6 @@ import { Separator } from '../components/ui/separator';
 interface Message { id: string; role: 'user' | 'assistant'; content: string; timestamp: Date; }
 
 export default function AIChatPage() {
-  const { t } = useAppLanguage();
   const [messages, setMessages] = useState<Message[]>([{ id: '1', role: 'assistant', content: 'Здравствуйте! Чем могу помочь?', timestamp: new Date() }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

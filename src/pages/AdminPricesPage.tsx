@@ -7,7 +7,6 @@ import { Input } from '../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription } from '../components/ui/alert';
-import { useAppLanguage } from '../hooks/useLanguage';
 
 interface Price {
   id: string;
@@ -18,7 +17,6 @@ interface Price {
 }
 
 export default function AdminPricesPage() {
-  const { t } = useAppLanguage();
   const [prices, setPrices] = useState<Price[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
