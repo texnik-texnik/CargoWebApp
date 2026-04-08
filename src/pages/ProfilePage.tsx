@@ -31,11 +31,14 @@ export default function ProfilePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('ProfilePage mounted - loading user...');
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
+      console.log('User from localStorage:', parsed);
       setPhone(parsed.phone || '');
       setIsAuthenticated(true);
+      // Принудительно загружаем профиль каждый раз
       loadUserProfile(parsed.phone);
     } else {
       // Пользователь не авторизован
@@ -71,8 +74,10 @@ export default function ProfilePage() {
       }
 
       if (data) {
-        console.log('Profile loaded from DB:', data);
-        console.log('DB editName:', data.name, 'DB editLang:', data.lang);
+        console.log('========== PROFILE LOADED ==========');
+        console.log('Full data from DB:', JSON.stringify(data, null, 2));
+        console.log('DB name:', data.name, '| type:', typeof data.name);
+        console.log('DB lang:', data.lang, '| type:', typeof data.lang);
         
         // Обновляем userData
         setUserData(data);
@@ -80,10 +85,13 @@ export default function ProfilePage() {
         // Обновляем локальные состояния
         const newName = data.name || '';
         const newLang = data.lang || 'ru';
+        console.log('Setting editName to: "%s" (was "%s")', newName, editName);
+        console.log('Setting editLang to: "%s" (was "%s")', newLang, editLang);
         setEditName(newName);
         setEditLang(newLang);
         
-        console.log('Setting editName to:', newName, 'editLang to:', newLang);
+        console.log('After setState - editName should be:', newName);
+        console.log('=====================================');
         
         // Если имя не введён - показываем диалог
         if (!data.name || data.name.trim() === '') {
