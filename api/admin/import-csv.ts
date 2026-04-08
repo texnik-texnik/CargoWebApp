@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tracksToInsert = req.body;
     } else if (typeof req.body === 'string') {
       const lines = req.body.trim().split('\n').slice(1);
-      tracksToInsert = lines.map((line) => {
+      tracksToInsert = lines.map((line: string) => {
         const parts = line.split(',');
         if (parts.length < 9) return null;
         const [code, _co, _op, inDate, _inSt, inWeight, outDate, outStatus, outWeight] = parts;
