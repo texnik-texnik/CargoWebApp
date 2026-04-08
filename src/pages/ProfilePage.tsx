@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -40,31 +41,33 @@ export default function ProfilePage() {
 
   async function loadUserProfile(p: string) {
     if (!p) {
-      console.error('No phone provided');
+      setError('Телефон не указан');
+      setUserData({ phone: '', name: '', lang: 'ru' });
       return;
     }
     try {
-      console.log('Loading profile for phone:', p);
-      const { data, error } = await supabase.from('users').select('*').eq('phone', p).single();
+      const { data, error: supabaseError } = await supabase.from('users').select('*').eq('phone', p).single();
       
-      if (error) {
-        console.error('Supabase error:', error.message, error.code);
+      if (supabaseError) {
         // Если пользователь не найден - создаем минимальный профиль
-        if (error.code === 'PGRST116') {
+        if (supabaseError.code === 'PGRST116') {
           setUserData({ phone: p, name: '', lang: 'ru' });
           return;
         }
+        setError(`Ошибка: ${supabaseError.message}`);
+        // Fallback
+        setUserData({ phone: p, name: '', lang: 'ru' });
+        return;
       }
       
       if (data) {
-        console.log('Profile loaded:', data);
         setUserData(data);
         setName(data.name || '');
         setLang(data.lang || 'ru');
         await loadMyTracks(data.history);
       }
-    } catch (error) {
-      console.error('Error loading profile:', error);
+    } catch (err: any) {
+      setError(`Ошибка загрузки: ${err.message || 'Неизвестная ошибка'}`);
       // Fallback: показываем минимальный профиль
       setUserData({ phone: p, name: '', lang: 'ru' });
     }
@@ -128,13 +131,30 @@ export default function ProfilePage() {
     );
   }
 
-  // Загрузка профиля
+  // Загрузка профиля - показываем спиннер
   if (!userData) {
-    return <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+    return (
+      <div className="container mx-auto px-4 py-6 max-w-2xl">
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+          <p className="text-muted-foreground">Загрузка профиля...</p>
+          {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
+        </div>
+      </div>
+    );
   }
+
+  // Ошибка загрузки но данные есть
+  const showErrorBanner = error && userData?.phone;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
+      {showErrorBanner && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800 font-medium text-sm">⚠️ {error}</p>
+          <p className="text-red-600 text-xs mt-1">Профиль загружен в ограниченном режиме</p>
+        </div>
+      )}
       <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Профиль</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : 'Управление профилем'}</p></div>
 
       <Tabs defaultValue="profile" className="mb-6">
