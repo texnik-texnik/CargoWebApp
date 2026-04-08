@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { User, Phone, Globe, Save, LogOut, Package, ChevronRight, Copy, Check, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -15,7 +15,6 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
@@ -129,6 +128,8 @@ export default function ProfilePage() {
     finally { setSaving(false); }
   }
 
+  // Функция для сохранения треков в историю (будет использоваться в TracksPage)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function saveTrackToHistory(trackCode: string) {
     if (!phone) return;
     try {
