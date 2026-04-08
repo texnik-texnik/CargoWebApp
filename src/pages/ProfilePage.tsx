@@ -17,8 +17,6 @@ import { supabase } from '../lib/supabase/client';
 export default function ProfilePage() {
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState('');
-  const [editLang, setEditLang] = useState('ru');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [myTracks, setMyTracks] = useState<any[]>([]);
@@ -85,12 +83,12 @@ export default function ProfilePage() {
         // Обновляем локальные состояния
         const newName = data.name || '';
         const newLang = data.lang || 'ru';
-        console.log('Setting editName to: "%s" (was "%s")', newName, editName);
-        console.log('Setting editLang to: "%s" (was "%s")', newLang, editLang);
-        setEditName(newName);
-        setEditLang(newLang);
+        console.log('Setting userData?.name to: "%s" (was "%s")', newName, userData?.name);
+        console.log('Setting userData?.lang to: "%s" (was "%s")', newLang, userData?.lang);
+        setUserData((prev: any) => ({ ...prev, name: newName }));
+        setUserData((prev: any) => ({ ...prev, lang: newLang }));
         
-        console.log('After setState - editName should be:', newName);
+        console.log('After setState - userData?.name should be:', newName);
         console.log('=====================================');
         
         // Если имя не введён - показываем диалог
@@ -121,14 +119,17 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
-    if (!phone || !editName.trim()) return;
+    if (!phone || !userData?.name?.trim()) return;
     setSaving(true);
     try {
+      const nameToSave = userData.name.trim();
+      const langToSave = userData.lang || 'ru';
+      
       // Используем serverless API для обхода RLS
       const response = await fetch('/api/auth/save-name', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name: editName.trim(), lang: editLang }),
+        body: JSON.stringify({ phone, name: nameToSave, lang: langToSave }),
       });
       
       if (!response.ok) {
@@ -137,15 +138,8 @@ export default function ProfilePage() {
       }
       
       // Сначала обновляем localStorage
-      const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: editName.trim(), lang: editLang };
+      const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: nameToSave, lang: langToSave };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-
-      // Обновляем userData локально (без перезагрузки из БД)
-      setUserData((prev: any) => ({ ...prev, name: editName.trim(), lang: editLang }));
-      
-      // Обновляем локальные состояния явно
-      setEditName(editName.trim());
-      setEditLang(editLang);
       
       setEditing(false);
       setSuccessMessage('✅ Профиль успешно сохранён!');
@@ -164,12 +158,12 @@ export default function ProfilePage() {
       const { error } = await supabase.from('users').update({ name: pendingName.trim() }).eq('phone', phone);
       if (error) throw error;
       setShowNamePrompt(false);
-      setEditName(pendingName.trim());
+      setUserData((prev: any) => ({ ...prev, name: pendingName.trim() }));
       await loadUserProfile(phone);
       const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({ ...savedUser, name: pendingName.trim() }));
     } catch (error: any) {
-      console.error('Error saving editName:', error);
+      console.error('Error saving userData?.name:', error);
       setError('Не удалось сохранить имя');
     }
     finally { setSaving(false); }
@@ -277,14 +271,14 @@ export default function ProfilePage() {
           <Card><CardHeader><CardTitle>Информация профиля</CardTitle><CardDescription>Управляйте вашими персональными данными</CardDescription></CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div><Label htmlFor="editName" className="flex items-center gap-2"><User className="h-4 w-4" /> Имя (латиницей)</Label>
-                <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} disabled={!editing} placeholder="Ivan Ivanov" className="mt-2" /></div>
+              <div><Label htmlFor="name" className="flex items-center gap-2"><User className="h-4 w-4" /> Имя (латиницей)</Label>
+                <Input id="name" value={userData?.name || ''} onChange={(e) => setUserData((prev: any) => ({ ...prev, name: e.target.value }))} disabled={!editing} placeholder="Ivan Ivanov" className="mt-2" /></div>
               <Separator />
               <div><Label htmlFor="phone" className="flex items-center gap-2"><Phone className="h-4 w-4" /> Телефон</Label>
                 <Input id="phone" type="tel" value={phone} disabled className="mt-2" /></div>
               <Separator />
               <div><Label htmlFor="language" className="flex items-center gap-2"><Globe className="h-4 w-4" /> Язык</Label>
-                <Select value={editLang} onValueChange={setEditLang} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
+                <Select value={userData?.lang} onValueChange={(val) => setUserData((prev: any) => ({ ...prev, lang: val }))} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
             </div>
             <div className="mt-6 flex gap-2">
               {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? 'Сохранение...' : 'Сохранить'}</Button><Button variant="outline" onClick={() => setEditing(false)}>Отмена</Button></>)
@@ -361,8 +355,8 @@ export default function ProfilePage() {
       {/* Отладочная информация */}
       <div className="mt-4 p-4 bg-gray-100 rounded text-xs space-y-1">
         <p><strong>Отладка:</strong></p>
-        <p>editName: "{editName}"</p>
-        <p>editLang: "{editLang}"</p>
+        <p>userData?.name: "{userData?.name}"</p>
+        <p>userData?.lang: "{userData?.lang}"</p>
         <p>userData.name: "{userData?.name}"</p>
         <p>userData.lang: "{userData?.lang}"</p>
       </div>
