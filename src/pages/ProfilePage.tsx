@@ -17,9 +17,9 @@ import { supabase } from '../lib/supabase/client';
 export default function ProfilePage() {
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editLang, setEditLang] = useState('ru');
   const [phone, setPhone] = useState('');
-  const [lang, setLang] = useState('ru');
   const [saving, setSaving] = useState(false);
   const [myTracks, setMyTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(false);
@@ -47,7 +47,7 @@ export default function ProfilePage() {
   async function loadUserProfile(p: string) {
     if (!p) {
       setError('Телефон не указан');
-      setUserData({ phone: '', name: '', lang: 'ru' });
+      setUserData({ phone: '', editName: '', editLang: 'ru' });
       return;
     }
     try {
@@ -61,18 +61,18 @@ export default function ProfilePage() {
       if (supabaseError) {
         // Если пользователь не найден - создаем минимальный профиль
         if (supabaseError.code === 'PGRST116') {
-          setUserData({ phone: p, name: '', lang: 'ru' });
+          setUserData({ phone: p, editName: '', editLang: 'ru' });
           return;
         }
         setError(`Ошибка: ${supabaseError.message}`);
         // Fallback
-        setUserData({ phone: p, name: '', lang: 'ru' });
+        setUserData({ phone: p, editName: '', editLang: 'ru' });
         return;
       }
 
       if (data) {
         console.log('Profile loaded from DB:', data);
-        console.log('DB name:', data.name, 'DB lang:', data.lang);
+        console.log('DB editName:', data.name, 'DB editLang:', data.lang);
         
         // Обновляем userData
         setUserData(data);
@@ -80,10 +80,10 @@ export default function ProfilePage() {
         // Обновляем локальные состояния
         const newName = data.name || '';
         const newLang = data.lang || 'ru';
-        setName(newName);
-        setLang(newLang);
+        setEditName(newName);
+        setEditLang(newLang);
         
-        console.log('Setting name to:', newName, 'lang to:', newLang);
+        console.log('Setting editName to:', newName, 'editLang to:', newLang);
         
         // Если имя не введён - показываем диалог
         if (!data.name || data.name.trim() === '') {
@@ -96,7 +96,7 @@ export default function ProfilePage() {
       console.error('Load profile error:', err);
       setError(`Ошибка загрузки: ${err.message || 'Неизвестная ошибка'}`);
       // Fallback: показываем минимальный профиль
-      setUserData({ phone: p, name: '', lang: 'ru' });
+      setUserData({ phone: p, editName: '', editLang: 'ru' });
     }
   }
 
@@ -113,14 +113,14 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
-    if (!phone || !name.trim()) return;
+    if (!phone || !editName.trim()) return;
     setSaving(true);
     try {
       // Используем serverless API для обхода RLS
       const response = await fetch('/api/auth/save-name', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name: name.trim(), lang }),
+        body: JSON.stringify({ phone, name: editName.trim(), lang: editLang }),
       });
       
       if (!response.ok) {
@@ -129,15 +129,15 @@ export default function ProfilePage() {
       }
       
       // Сначала обновляем localStorage
-      const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: name.trim(), lang };
+      const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: editName.trim(), lang: editLang };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
+
       // Обновляем userData локально (без перезагрузки из БД)
-      setUserData((prev: any) => ({ ...prev, name: name.trim(), lang }));
+      setUserData((prev: any) => ({ ...prev, name: editName.trim(), lang: editLang }));
       
       // Обновляем локальные состояния явно
-      setName(name.trim());
-      setLang(lang);
+      setEditName(editName.trim());
+      setEditLang(editLang);
       
       setEditing(false);
       setSuccessMessage('✅ Профиль успешно сохранён!');
@@ -156,12 +156,12 @@ export default function ProfilePage() {
       const { error } = await supabase.from('users').update({ name: pendingName.trim() }).eq('phone', phone);
       if (error) throw error;
       setShowNamePrompt(false);
-      setName(pendingName.trim());
+      setEditName(pendingName.trim());
       await loadUserProfile(phone);
       const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({ ...savedUser, name: pendingName.trim() }));
     } catch (error: any) {
-      console.error('Error saving name:', error);
+      console.error('Error saving editName:', error);
       setError('Не удалось сохранить имя');
     }
     finally { setSaving(false); }
@@ -261,22 +261,22 @@ export default function ProfilePage() {
         <TabsContent value="profile">
           <Card className="mb-4"><CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20"><AvatarFallback className="bg-primary text-2xl font-bold text-primary-foreground">{(name || 'U').charAt(0).toUpperCase()}</AvatarFallback></Avatar>
-              <div><h3 className="text-xl font-semibold">{name || 'Введите имя'}</h3><p className="text-sm text-muted-foreground">{phone}</p>{userData?.client_id && <Badge className="mt-2">{userData.client_id}</Badge>}</div>
+              <Avatar className="h-20 w-20"><AvatarFallback className="bg-primary text-2xl font-bold text-primary-foreground">{(userData?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback></Avatar>
+              <div><h3 className="text-xl font-semibold">{userData?.name || 'Введите имя'}</h3><p className="text-sm text-muted-foreground">{phone}</p>{userData?.client_id && <Badge className="mt-2">{userData.client_id}</Badge>}</div>
             </div>
           </CardContent></Card>
 
           <Card><CardHeader><CardTitle>Информация профиля</CardTitle><CardDescription>Управляйте вашими персональными данными</CardDescription></CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div><Label htmlFor="name" className="flex items-center gap-2"><User className="h-4 w-4" /> Имя (латиницей)</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={!editing} placeholder="Ivan Ivanov" className="mt-2" /></div>
+              <div><Label htmlFor="editName" className="flex items-center gap-2"><User className="h-4 w-4" /> Имя (латиницей)</Label>
+                <Input id="editName" value={editName} onChange={(e) => setEditName(e.target.value)} disabled={!editing} placeholder="Ivan Ivanov" className="mt-2" /></div>
               <Separator />
               <div><Label htmlFor="phone" className="flex items-center gap-2"><Phone className="h-4 w-4" /> Телефон</Label>
                 <Input id="phone" type="tel" value={phone} disabled className="mt-2" /></div>
               <Separator />
               <div><Label htmlFor="language" className="flex items-center gap-2"><Globe className="h-4 w-4" /> Язык</Label>
-                <Select value={lang} onValueChange={setLang} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
+                <Select value={editLang} onValueChange={setEditLang} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
             </div>
             <div className="mt-6 flex gap-2">
               {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? 'Сохранение...' : 'Сохранить'}</Button><Button variant="outline" onClick={() => setEditing(false)}>Отмена</Button></>)
@@ -353,8 +353,8 @@ export default function ProfilePage() {
       {/* Отладочная информация */}
       <div className="mt-4 p-4 bg-gray-100 rounded text-xs space-y-1">
         <p><strong>Отладка:</strong></p>
-        <p>name: "{name}"</p>
-        <p>lang: "{lang}"</p>
+        <p>editName: "{editName}"</p>
+        <p>editLang: "{editLang}"</p>
         <p>userData.name: "{userData?.name}"</p>
         <p>userData.lang: "{userData?.lang}"</p>
       </div>
