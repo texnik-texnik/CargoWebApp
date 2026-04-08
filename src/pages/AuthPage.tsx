@@ -60,13 +60,13 @@ export default function AuthPage() {
   };
 
   const handleNameSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); if (!name.trim()) return;
+    e.preventDefault();
     setLoading(true); setError(null);
     try {
       const formattedPhone = getFullPhone();
       const response = await fetch('/api/auth/save-name', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formattedPhone, name: name.trim() }),
+        body: JSON.stringify({ phone: formattedPhone, name: name.trim() || '' }),
       });
       if (!response.ok) { const d = await response.json(); throw new Error(d.error); }
       const data = await response.json();
@@ -99,7 +99,7 @@ export default function AuthPage() {
                     className="flex-1"
                     required
                     autoFocus
-                    maxLength={11}
+                    maxLength={15}
                   />
                 </div>
               </div>
@@ -124,13 +124,14 @@ export default function AuthPage() {
           )}
           {step === 'name' && (
             <form onSubmit={handleNameSubmit} className="space-y-4">
-              <div><Label htmlFor="name">Имя (латиницей)</Label>
+              <div><Label htmlFor="name">Имя (латиницей) - необязательно</Label>
                 <div className="relative mt-2"><Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="name" type="text" value={name} onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))} placeholder="Ali Valiyev" className="pl-10" required autoFocus /></div>
-                <p className="mt-2 text-xs text-muted-foreground">Это имя будет использоваться в адресе склада в Китае</p>
+                  <Input id="name" type="text" value={name} onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))} placeholder="Ali Valiyev (можно ввести позже)" className="pl-10" autoFocus /></div>
+                <p className="mt-2 text-xs text-muted-foreground">Это имя будет использоваться в адресе склада в Китае. Можно ввести позже в профиле.</p>
               </div>
               {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-              <Button type="submit" disabled={loading || !name.trim()} className="w-full">{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Регистрация...</> : <><CheckCircle className="mr-2 h-4 w-4" /> Завершить регистрацию</>}</Button>
+              <Button type="submit" disabled={loading} className="w-full">{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Регистрация...</> : <><CheckCircle className="mr-2 h-4 w-4" /> {name.trim() ? 'Завершить регистрацию' : 'Продолжить без имени'}</>}</Button>
+              <Button type="button" variant="ghost" onClick={() => { setName(''); handleNameSubmit({ preventDefault: () => {} } as any); }} className="w-full">Пропустить</Button>
             </form>
           )}
         </CardContent>
