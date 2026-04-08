@@ -32,6 +32,27 @@ export default function TracksPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Сохраняем трек в историю поиска
+  async function saveTrackToHistory(code: string) {
+    const savedUser = localStorage.getItem('user');
+    if (!savedUser) {
+      // Сохраняем локально
+      saveToLocalStorage(code);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(savedUser);
+      const { data: u } = await supabase.from('users').select('history').eq('phone', parsed.phone).single();
+      const history = u?.history ? u.history.split(',').filter(Boolean) : [];
+      const newHistory = [code, ...history.filter((c: string) => c !== code)].slice(0, 50);
+      await supabase.from('users').update({ history: newHistory.join(',') }).eq('phone', parsed.phone);
+      setSearchHistory(newHistory);
+    } catch (err) {
+      console.error('Error saving to history:', err);
+      saveToLocalStorage(code);
+    }
+  }
+
   async function loadSearchHistory(phone: string) {
     try {
       const { data } = await supabase.from('users').select('history').eq('phone', phone).single();
@@ -47,25 +68,16 @@ export default function TracksPage() {
       if (error) throw error;
       setSearchResults(data || []);
       setSearchCode(code);
-      if (user) await saveToHistory(user.phone, code);
-      else saveToLocalStorage(code);
+      
+      // Всегда сохраняем трек в историю
+      await saveTrackToHistory(code);
     } catch (err: any) { setError(err.message || 'Ошибка поиска'); }
     finally { setLoading(false); }
   }
 
-  async function saveToHistory(phone: string, code: string) {
-    try {
-      const { data: u } = await supabase.from('users').select('history').eq('phone', phone).single();
-      const history = u?.history ? u.history.split(',').filter(Boolean) : [];
-      const newHistory = [code, ...history.filter((c: string) => c !== code)].slice(0, 20);
-      await supabase.from('users').update({ history: newHistory.join(',') }).eq('phone', phone);
-      setSearchHistory(newHistory);
-    } catch (err) { console.error('Error saving to history:', err); }
-  }
-
   function saveToLocalStorage(code: string) {
     const localHistory = JSON.parse(localStorage.getItem('track_history') || '[]');
-    const newHistory = [code, ...localHistory.filter((c: string) => c !== code)].slice(0, 20);
+    const newHistory = [code, ...localHistory.filter((c: string) => c !== code)].slice(0, 50);
     localStorage.setItem('track_history', JSON.stringify(newHistory));
     setSearchHistory(newHistory);
   }

@@ -51,8 +51,13 @@ export default function ProfilePage() {
       return;
     }
     try {
-      const { data, error: supabaseError } = await supabase.from('users').select('*').eq('phone', p).single();
-      
+      // Добавляем cache-busting для получения свежих данных
+      const { data, error: supabaseError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('phone', p)
+        .single();
+
       if (supabaseError) {
         // Если пользователь не найден - создаем минимальный профиль
         if (supabaseError.code === 'PGRST116') {
@@ -64,8 +69,9 @@ export default function ProfilePage() {
         setUserData({ phone: p, name: '', lang: 'ru' });
         return;
       }
-      
+
       if (data) {
+        console.log('Profile loaded from DB:', data);
         setUserData(data);
         setName(data.name || '');
         setLang(data.lang || 'ru');
@@ -78,6 +84,7 @@ export default function ProfilePage() {
         await loadMyTracks(data.history);
       }
     } catch (err: any) {
+      console.error('Load profile error:', err);
       setError(`Ошибка загрузки: ${err.message || 'Неизвестная ошибка'}`);
       // Fallback: показываем минимальный профиль
       setUserData({ phone: p, name: '', lang: 'ru' });
