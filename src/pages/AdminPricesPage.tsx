@@ -72,7 +72,7 @@ export default function AdminPricesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Удалить эту цену?')) return;
+    if (!window.confirm('Удалить эту цену?')) return;
     try {
       const response = await fetch('/api/admin/delete-price', {
         method: 'DELETE',
