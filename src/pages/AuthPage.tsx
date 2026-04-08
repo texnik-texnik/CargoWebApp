@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { Separator } from '../components/ui/separator';
 
 export default function AuthPage() {
+  const { t } = useAppLanguage();
   const navigate = useNavigate();
   const [step, setStep] = useState<'loading' | 'setup' | 'done'>('loading');
   const [phone, setPhone] = useState('');
@@ -47,7 +49,7 @@ export default function AuthPage() {
     const user = tg.initDataUnsafe?.user;
     
     if (!user) {
-      setError('Не удалось получить данные пользователя. Перезапустите приложение.');
+      setError('Failed to get user data. Restart.');
       setStep('done');
       return;
     }
@@ -103,12 +105,12 @@ export default function AuthPage() {
     setError(null);
 
     if (phone.replace(/\D/g, '').length < 9) {
-      setError('Введите корректный номер телефона');
+      setError('Enter valid phone');
       return;
     }
 
     if (!name.trim()) {
-      setError('Введите имя');
+      setError(t.noName);
       return;
     }
 
@@ -130,7 +132,7 @@ export default function AuthPage() {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Ошибка сохранения');
+        throw new Error(err.error || 'Save error');
       }
 
       const data = await response.json();
@@ -148,13 +150,13 @@ export default function AuthPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">
-            {step === 'loading' ? 'Вход...' : step === 'setup' ? 'Завершите регистрацию' : 'Ошибка'}
+            {step === 'loading' ? t.login : step === 'setup' ? 'Complete registration' : t.error}
           </CardTitle>
           <CardDescription>
             {step === 'loading' 
-              ? 'Проверяем данные Telegram...' 
+              ? 'Checking Telegram...' 
               : step === 'setup' 
-                ? 'Для доставки укажите телефон и имя' 
+                ? 'Provide phone and name' 
                 : error}
           </CardDescription>
         </CardHeader>

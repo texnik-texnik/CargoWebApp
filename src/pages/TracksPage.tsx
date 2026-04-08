@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, ScanLine, History, X } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { supabase } from '../lib/supabase/client';
 
 export default function TracksPage() {
+  const { t } = useAppLanguage();
   const [searchParams] = useSearchParams();
   const [searchCode, setSearchCode] = useState(searchParams.get('code') || '');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -114,7 +116,7 @@ export default function TracksPage() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchCode)} placeholder="Введите трек-номер..." className="pl-10" />
             </div>
             <Button onClick={() => handleSearch(searchCode)} disabled={loading || !searchCode.trim()}>
-              {loading ? '...' : 'Найти'}
+              {loading ? '...' : t.search}
             </Button>
           </div>
           <Button variant="outline" className="mt-2 w-full" disabled>

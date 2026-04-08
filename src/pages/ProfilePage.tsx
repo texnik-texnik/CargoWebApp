@@ -16,7 +16,7 @@ import { useAppLanguage } from '../hooks/useLanguage';
 import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
-  const { lang, setLang } = useAppLanguage();
+  const { t, lang, setLang } = useAppLanguage();
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState('');
@@ -241,7 +241,7 @@ export default function ProfilePage() {
           <p className="text-green-800 font-medium text-sm">{successMessage}</p>
         </div>
       )}
-      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Профиль</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : 'Управление профилем'}</p></div>
+      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Профиль</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : t.profileDesc}</p></div>
 
       <Tabs defaultValue="profile" className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
@@ -254,7 +254,7 @@ export default function ProfilePage() {
           <Card className="mb-4"><CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <Avatar className="h-20 w-20"><AvatarFallback className="bg-primary text-2xl font-bold text-primary-foreground">{(userData?.name || 'U').charAt(0).toUpperCase()}</AvatarFallback></Avatar>
-              <div><h3 className="text-xl font-semibold">{userData?.name || 'Введите имя'}</h3><p className="text-sm text-muted-foreground">{phone}</p>{userData?.client_id && <Badge className="mt-2">{userData.client_id}</Badge>}</div>
+              <div><h3 className="text-xl font-semibold">{userData?.name || t.noName}</h3><p className="text-sm text-muted-foreground">{phone}</p>{userData?.client_id && <Badge className="mt-2">{userData.client_id}</Badge>}</div>
             </div>
           </CardContent></Card>
 
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                 <Select value={lang} onValueChange={(val) => setLang(val as 'ru' | 'tj')} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
             </div>
             <div className="mt-6 flex gap-2">
-              {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? 'Сохранение...' : 'Сохранить'}</Button><Button variant="outline" onClick={() => setEditing(false)}>Отмена</Button></>)
+              {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? t.saving : t.saveBtn}</Button><Button variant="outline" onClick={() => setEditing(false)}>Отмена</Button></>)
                 : (<Button onClick={() => setEditing(true)} className="flex-1">Редактировать</Button>)}
             </div>
           </CardContent></Card>
@@ -336,7 +336,7 @@ export default function ProfilePage() {
           </div>
           <DialogFooter>
             <Button onClick={handleSaveName} disabled={saving || !pendingName.trim()}>
-              {saving ? 'Сохранение...' : 'Сохранить'}
+              {saving ? t.saving : t.saveBtn}
             </Button>
           </DialogFooter>
         </DialogContent>

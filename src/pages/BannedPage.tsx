@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -14,6 +15,7 @@ const bannedItems = [
 ];
 
 export default function BannedPage() {
+  const { t } = useAppLanguage();
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <div className="mb-6">

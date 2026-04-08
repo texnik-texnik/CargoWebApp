@@ -1,9 +1,11 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { MapPin, Phone, Clock, Mail } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Separator } from '../components/ui/separator';
 
 export default function AddressesPage() {
+  const { t } = useAppLanguage();
   const chinaAddress = {
     title: 'Китай (Гуанчжоу)',
     address: '广东省广州市白云区石井街石沙路288号',
