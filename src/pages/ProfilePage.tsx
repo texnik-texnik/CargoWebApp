@@ -50,7 +50,7 @@ export default function ProfilePage() {
   async function loadUserProfile(p: string) {
     if (!p) {
       setError('Телефон не указан');
-      setUserData({ phone: '', editName: '', editLang: 'ru' });
+      setUserData({ phone: '', name: '', lang: 'ru' });
       return;
     }
     try {
@@ -64,12 +64,12 @@ export default function ProfilePage() {
       if (supabaseError) {
         // Если пользователь не найден - создаем минимальный профиль
         if (supabaseError.code === 'PGRST116') {
-          setUserData({ phone: p, editName: '', editLang: 'ru' });
+          setUserData({ phone: p, name: '', lang: 'ru' });
           return;
         }
         setError(`Ошибка: ${supabaseError.message}`);
         // Fallback
-        setUserData({ phone: p, editName: '', editLang: 'ru' });
+        setUserData({ phone: p, name: '', lang: 'ru' });
         return;
       }
 
@@ -104,7 +104,7 @@ export default function ProfilePage() {
       console.error('Load profile error:', err);
       setError(`Ошибка загрузки: ${err.message || 'Неизвестная ошибка'}`);
       // Fallback: показываем минимальный профиль
-      setUserData({ phone: p, editName: '', editLang: 'ru' });
+      setUserData({ phone: p, name: '', lang: 'ru' });
     }
   }
 
