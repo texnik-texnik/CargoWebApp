@@ -52,43 +52,39 @@ export default function ProfilePage() {
       return;
     }
     try {
-      // Добавляем cache-busting для получения свежих данных
-      const { data, error: supabaseError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('phone', p)
-        .single();
-
-      if (supabaseError) {
-        // Если пользователь не найден - создаем минимальный профиль
-        if (supabaseError.code === 'PGRST116') {
+      console.log('Loading profile for phone:', p);
+      
+      // Используем serverless API вместо прямого Supabase запроса
+      const response = await fetch(`/api/auth/get-profile?phone=${encodeURIComponent(p)}`);
+      
+      if (!response.ok) {
+        const err = await response.json();
+        console.error('API error:', err);
+        
+        // Если пользователь не найден
+        if (response.status === 404) {
           setUserData({ phone: p, name: '', lang: 'ru' });
           return;
         }
-        setError(`Ошибка: ${supabaseError.message}`);
-        // Fallback
+        
+        setError(`Ошибка: ${err.error || 'Не удалось загрузить профиль'}`);
         setUserData({ phone: p, name: '', lang: 'ru' });
         return;
       }
-
+      
+      const result = await response.json();
+      const data = result.user;
+      
       if (data) {
         console.log('========== PROFILE LOADED ==========');
         console.log('Full data from DB:', JSON.stringify(data, null, 2));
         console.log('DB name:', data.name, '| type:', typeof data.name);
         console.log('DB lang:', data.lang, '| type:', typeof data.lang);
         
-        // Обновляем userData
+        // ОДИН вызов setUserData для всех полей
         setUserData(data);
         
-        // Обновляем локальные состояния
-        const newName = data.name || '';
-        const newLang = data.lang || 'ru';
-        console.log('Setting userData?.name to: "%s" (was "%s")', newName, userData?.name);
-        console.log('Setting userData?.lang to: "%s" (was "%s")', newLang, userData?.lang);
-        setUserData((prev: any) => ({ ...prev, name: newName }));
-        setUserData((prev: any) => ({ ...prev, lang: newLang }));
-        
-        console.log('After setState - userData?.name should be:', newName);
+        console.log('userData set to:', data);
         console.log('=====================================');
         
         // Если имя не введён - показываем диалог
