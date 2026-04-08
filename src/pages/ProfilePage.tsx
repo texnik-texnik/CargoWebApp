@@ -16,7 +16,7 @@ import { useAppLanguage } from '../hooks/useLanguage';
 import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
-  const { t, lang, setLang } = useAppLanguage();
+  const { lang, setLang } = useAppLanguage();
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState('');
