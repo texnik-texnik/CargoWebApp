@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Users, TrendingUp, AlertCircle } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Skeleton } from '../components/ui/skeleton';
 import { supabase } from '../lib/supabase/client';
 
 export default function DashboardPage() {
+  const { t } = useAppLanguage();
   const [stats, setStats] = useState({ totalTracks: 0, activeTracks: 0, deliveredTracks: 0, totalUsers: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -39,9 +41,9 @@ export default function DashboardPage() {
       <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Статистика</h2><p className="text-muted-foreground">Общая информация о системе</p></div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         {[
-          { title: 'Всего треков', value: stats.totalTracks, icon: Package, color: 'text-blue-500' },
+          { title: t.totalTracks, value: stats.totalTracks, icon: Package, color: 'text-blue-500' },
           { title: 'Активных', value: stats.activeTracks, icon: TrendingUp, color: 'text-orange-500' },
-          { title: 'Доставлено', value: stats.deliveredTracks, icon: AlertCircle, color: 'text-green-500' },
+          { title: t.deliveredCount, value: stats.deliveredTracks, icon: AlertCircle, color: 'text-green-500' },
           { title: 'Пользователей', value: stats.totalUsers, icon: Users, color: 'text-purple-500' },
         ].map((stat) => (
           <Card key={stat.title}>

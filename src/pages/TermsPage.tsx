@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
 
@@ -25,6 +26,7 @@ const policySections = [
 ];
 
 export default function TermsPage() {
+  const { t } = useAppLanguage();
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <div className="mb-6">

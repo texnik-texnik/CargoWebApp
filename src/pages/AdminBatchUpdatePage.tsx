@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState } from 'react';
 import { Calendar, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -11,6 +12,7 @@ import { Separator } from '../components/ui/separator';
 const statusLabels: Record<string, string> = { waiting: 'Ожидает', received: 'Получен', intransit: 'В пути', border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен' };
 
 export default function AdminBatchUpdatePage() {
+  const { t } = useAppLanguage();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [newStatus, setNewStatus] = useState('');
@@ -30,7 +32,7 @@ export default function AdminBatchUpdatePage() {
         body: JSON.stringify({ startDate, endDate, newStatus, dateColumn }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Ошибка обновления');
+      if (!response.ok) throw new Error(data.error || t.error);
       setResult(data);
     } catch (err: any) { setError(err.message); }
     finally { setUpdating(false); }

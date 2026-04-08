@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { useAppLanguage } from '../hooks/useLanguage';
 
 interface Price {
   id: string;
@@ -17,6 +18,7 @@ interface Price {
 }
 
 export default function AdminPricesPage() {
+  const { t } = useAppLanguage();
   const [prices, setPrices] = useState<Price[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export default function AdminPricesPage() {
       });
 
       if (response.ok) {
-        setSuccess('Цена обновлена!');
+        setSuccess('Price updated!');
         setEditing(null);
         setTimeout(() => setSuccess(null), 3000);
         loadPrices();
@@ -80,7 +82,7 @@ export default function AdminPricesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Удалить эту цену?')) return;
+    if (!window.confirm('Delete this price?')) return;
     try {
       const response = await fetch('/api/admin/delete-price', {
         method: 'DELETE',
@@ -89,7 +91,7 @@ export default function AdminPricesPage() {
       });
 
       if (response.ok) {
-        setSuccess('Цена удалена!');
+        setSuccess('Price deleted!');
         setTimeout(() => setSuccess(null), 3000);
         loadPrices();
       }
@@ -120,7 +122,7 @@ export default function AdminPricesPage() {
       });
 
       if (response.ok) {
-        setSuccess('Цена добавлена!');
+        setSuccess('Price added!');
         setAdding(false);
         setNewData({ weight_from: '', weight_to: '', price: '' });
         setTimeout(() => setSuccess(null), 3000);
