@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Upload, Database, Users, Bell, Calendar, ChevronRight } from 'lucide-react';
+import { Upload, Database, Users, Bell, Calendar, DollarSign, ChevronRight } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function AdminPage() {
   const sections = [
+    { title: 'Управление ценами', desc: 'Изменить тарифы на доставку', icon: DollarSign, href: '/admin/prices', color: 'text-green-500' },
     { title: 'Импорт CSV', desc: 'Загрузить треки из китайской таблицы', icon: Upload, href: '/admin/import', color: 'text-blue-500' },
     { title: 'Массовое обновление', desc: 'Обновить статусы по диапазону дат', icon: Calendar, href: '/admin/batch-update', color: 'text-orange-500' },
     { title: 'База данных', desc: 'Управление треками', icon: Database, href: '#', color: 'text-green-500' },
