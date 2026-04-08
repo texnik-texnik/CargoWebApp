@@ -19,6 +19,8 @@ export function BottomNav() {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       const user = JSON.parse(savedUser);
+      console.log('BottomNav user:', user);
+      console.log('is_admin:', user.is_admin, 'role:', user.role);
       setIsAdmin(user.is_admin === true || user.role === 'admin');
     }
   }, []);

@@ -172,8 +172,13 @@ export default function ProfilePage() {
   }
 
   function handleLogout() {
+    localStorage.removeItem('user');
     const tg = (window as any).Telegram?.WebApp;
-    if (tg) tg.close(); else window.location.href = '/';
+    if (tg) {
+      // Перезагружаем Mini App для повторной авторизации
+      tg.close();
+    }
+    window.location.href = '/';
   }
 
   const phoneWithoutCountry = (userData?.phone || '').replace('+992', '').replace(/\s/g, '');

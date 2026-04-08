@@ -76,6 +76,9 @@ export default function AuthPage() {
       if (!response.ok) throw new Error('Ошибка авторизации');
 
       const data = await response.json();
+      console.log('Auth response:', data);
+      console.log('User from API:', data.user);
+      console.log('is_admin from API:', data.user?.is_admin);
       
       // Сохраняем пользователя
       localStorage.setItem('user', JSON.stringify(data.user));

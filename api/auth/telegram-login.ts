@@ -24,16 +24,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existingUser) {
       // Пользователь уже есть - обновляем данные если есть новые
       const updateData: any = {};
-      if (phone) updateData.phone = phone;
-      if (name) updateData.name = name;
-      
+      if (phone && !existingUser.phone) updateData.phone = phone;
+      if (name && !existingUser.name) updateData.name = name;
+
+      let finalUser = existingUser;
       if (Object.keys(updateData).length > 0) {
-        await supabase.from('users').update(updateData).eq('telegram_id', telegram_id);
+        const { data } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('telegram_id', telegram_id)
+          .select()
+          .single();
+        if (data) finalUser = data;
       }
-      
-      return res.status(200).json({ 
-        success: true, 
-        user: { ...existingUser, ...updateData },
+
+      return res.status(200).json({
+        success: true,
+        user: finalUser,
         isNew: false
       });
     }
