@@ -39,14 +39,35 @@ export default function ProfilePage() {
   }, []);
 
   async function loadUserProfile(p: string) {
-    if (!p) return;
+    if (!p) {
+      console.error('No phone provided');
+      return;
+    }
     try {
-      const { data } = await supabase.from('users').select('*').eq('phone', p).single();
+      console.log('Loading profile for phone:', p);
+      const { data, error } = await supabase.from('users').select('*').eq('phone', p).single();
+      
+      if (error) {
+        console.error('Supabase error:', error.message, error.code);
+        // Если пользователь не найден - создаем минимальный профиль
+        if (error.code === 'PGRST116') {
+          setUserData({ phone: p, name: '', lang: 'ru' });
+          return;
+        }
+      }
+      
       if (data) {
-        setUserData(data); setName(data.name || ''); setLang(data.lang || 'ru');
+        console.log('Profile loaded:', data);
+        setUserData(data);
+        setName(data.name || '');
+        setLang(data.lang || 'ru');
         await loadMyTracks(data.history);
       }
-    } catch (error) { console.error('Error loading profile:', error); }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      // Fallback: показываем минимальный профиль
+      setUserData({ phone: p, name: '', lang: 'ru' });
+    }
   }
 
   async function loadMyTracks(history: string) {
