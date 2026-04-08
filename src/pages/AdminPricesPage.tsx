@@ -44,15 +44,24 @@ export default function AdminPricesPage() {
   }
 
   async function handleSave(id: string) {
+    const weightFrom = parseFloat(editData.weight_from);
+    const weightTo = editData.weight_to ? parseFloat(editData.weight_to) : null;
+    const price = parseFloat(editData.price);
+
+    if (isNaN(weightFrom) || isNaN(price)) {
+      setError('Заполните вес и цену корректно');
+      return;
+    }
+
     try {
       const response = await fetch('/api/admin/update-price', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id,
-          weight_from: parseFloat(editData.weight_from),
-          weight_to: editData.weight_to ? parseFloat(editData.weight_to) : null,
-          price: parseFloat(editData.price),
+          weight_from: weightFrom,
+          weight_to: weightTo,
+          price: price,
         }),
       });
 
@@ -90,14 +99,23 @@ export default function AdminPricesPage() {
   }
 
   async function handleAdd() {
+    const weightFrom = parseFloat(newData.weight_from);
+    const weightTo = newData.weight_to ? parseFloat(newData.weight_to) : null;
+    const price = parseFloat(newData.price);
+
+    if (isNaN(weightFrom) || isNaN(price)) {
+      setError('Заполните вес и цену корректно');
+      return;
+    }
+
     try {
       const response = await fetch('/api/admin/update-price', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          weight_from: parseFloat(newData.weight_from),
-          weight_to: newData.weight_to ? parseFloat(newData.weight_to) : null,
-          price: parseFloat(newData.price),
+          weight_from: weightFrom,
+          weight_to: weightTo,
+          price: price,
         }),
       });
 

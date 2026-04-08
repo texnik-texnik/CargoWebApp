@@ -6,8 +6,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { weight_from, weight_to, price, id } = req.body;
-    
-    if (!weight_from || price === undefined) {
+
+    if (weight_from === undefined || weight_from === null || price === undefined || price === null) {
       return res.status(400).json({ error: 'weight_from and price required' });
     }
 
