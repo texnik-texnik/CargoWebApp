@@ -285,7 +285,7 @@ export default function ProfilePage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <Input
-              placeholder="Например: Ivan Ivanov"
+              placeholder="Toshmat"
               value={pendingName}
               onChange={(e) => setPendingName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}

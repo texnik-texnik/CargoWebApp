@@ -6,9 +6,9 @@ interface AdminRouteProps {
   children: React.ReactNode;
 }
 
-// Список телефонов администраторов (добавьте сюда телефоны админов)
+// Список телефонов администраторов
 const ADMIN_PHONES = [
-  '+992000000000', // Замените на реальный номер админа
+  '+992900017456',
 ];
 
 export default function AdminRoute({ children }: AdminRouteProps) {

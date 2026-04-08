@@ -21,23 +21,31 @@ export default function AuthPage() {
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
-    if (digits.startsWith('992')) {
-      const rest = digits.slice(3);
-      if (rest.length <= 2) return `+992 ${rest}`;
-      if (rest.length <= 5) return `+992 ${rest.slice(0, 2)} ${rest.slice(2)}`;
-      if (rest.length <= 7) return `+992 ${rest.slice(0, 2)} ${rest.slice(2, 5)} ${rest.slice(5)}`;
-      return `+992 ${rest.slice(0, 2)} ${rest.slice(2, 5)} ${rest.slice(5, 7)} ${rest.slice(7, 9)}`;
-    }
-    return value;
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 5) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
+    if (digits.length <= 7) return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`;
+    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 7)} ${digits.slice(7, 9)}`;
   };
 
-  const handlePhoneSubmit = (e: React.FormEvent) => { e.preventDefault(); setError(null); setStep('code'); };
+  const getFullPhone = () => {
+    const cleanDigits = phone.replace(/\D/g, '');
+    return `+992${cleanDigits}`;
+  };
+
+  const handlePhoneSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (phone.replace(/\D/g, '').length < 9) {
+      setError('Введите корректный номер');
+      return;
+    }
+    setStep('code');
+  };
 
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError(null); setLoading(true);
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const formattedPhone = cleanPhone.startsWith('992') ? `+${cleanPhone}` : `+992${cleanPhone}`;
+      const formattedPhone = getFullPhone();
       const response = await fetch('/api/auth/verify-code', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: formattedPhone, verificationCode: code }),
@@ -55,8 +63,7 @@ export default function AuthPage() {
     e.preventDefault(); if (!name.trim()) return;
     setLoading(true); setError(null);
     try {
-      const cleanPhone = phone.replace(/\D/g, '');
-      const formattedPhone = cleanPhone.startsWith('992') ? `+${cleanPhone}` : `+992${cleanPhone}`;
+      const formattedPhone = getFullPhone();
       const response = await fetch('/api/auth/save-name', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: formattedPhone, name: name.trim() }),
@@ -81,10 +88,22 @@ export default function AuthPage() {
           {step === 'phone' && (
             <form onSubmit={handlePhoneSubmit} className="space-y-4">
               <div><Label htmlFor="phone">Номер телефона</Label>
-                <div className="relative mt-2"><Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="+992 XX XXX XX XX" className="pl-10" required autoFocus /></div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-lg font-medium text-muted-foreground">+992</span>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhone(e.target.value))}
+                    placeholder="XX XXX XX XX"
+                    className="flex-1"
+                    required
+                    autoFocus
+                    maxLength={11}
+                  />
+                </div>
               </div>
-              <Button type="submit" disabled={phone.length < 13} className="w-full"><Key className="mr-2 h-4 w-4" /> Получить код</Button>
+              <Button type="submit" disabled={phone.replace(/\D/g, '').length < 9} className="w-full"><Key className="mr-2 h-4 w-4" /> Получить код</Button>
               <Separator />
               <a href={TELEGRAM_BOT_URL} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full"><ExternalLink className="mr-2 h-4 w-4" /> Открыть @JinjakBot</Button>
