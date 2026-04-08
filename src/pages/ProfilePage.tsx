@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<any>(null);
+  const [_refreshKey, setRefreshKey] = useState(0);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -72,9 +73,18 @@ export default function ProfilePage() {
 
       if (data) {
         console.log('Profile loaded from DB:', data);
+        console.log('DB name:', data.name, 'DB lang:', data.lang);
+        
+        // Обновляем userData
         setUserData(data);
-        setName(data.name || '');
-        setLang(data.lang || 'ru');
+        
+        // Обновляем локальные состояния
+        const newName = data.name || '';
+        const newLang = data.lang || 'ru';
+        setName(newName);
+        setLang(newLang);
+        
+        console.log('Setting name to:', newName, 'lang to:', newLang);
         
         // Если имя не введён - показываем диалог
         if (!data.name || data.name.trim() === '') {
@@ -119,11 +129,23 @@ export default function ProfilePage() {
         throw new Error(err.error || 'Ошибка сохранения');
       }
       
+      // Сначала обновляем localStorage
+      const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: name.trim(), lang };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Затем обновляем локальные состояния
+      setName(name.trim());
+      setLang(lang);
+      
+      // Потом перезагружаем с сервера
+      await loadUserProfile(phone);
+      
+      // Принудительный ре-рендер
+      setRefreshKey(prev => prev + 1);
+      
       setEditing(false);
       setSuccessMessage('✅ Профиль успешно сохранён!');
       setTimeout(() => setSuccessMessage(null), 3000);
-      await loadUserProfile(phone);
-      localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: name.trim(), lang }));
     } catch (error: any) {
       console.error('Error saving:', error);
       setError(`Ошибка сохранения: ${error.message}`);
