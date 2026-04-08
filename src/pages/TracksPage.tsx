@@ -42,22 +42,36 @@ export default function TracksPage() {
     }
     try {
       const parsed = JSON.parse(savedUser);
-      const { data: u } = await supabase.from('users').select('history').eq('phone', parsed.phone).single();
-      const history = u?.history ? u.history.split(',').filter(Boolean) : [];
-      const newHistory = [code, ...history.filter((c: string) => c !== code)].slice(0, 50);
-      await supabase.from('users').update({ history: newHistory.join(',') }).eq('phone', parsed.phone);
-      setSearchHistory(newHistory);
+      // Используем serverless API для обхода RLS
+      const response = await fetch('/api/auth/save-track-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: parsed.phone, trackCode: code }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSearchHistory(result.history);
+      } else {
+        saveToLocalStorage(code);
+      }
     } catch (err) {
-      console.error('Error saving to history:', err);
       saveToLocalStorage(code);
     }
   }
 
   async function loadSearchHistory(phone: string) {
     try {
-      const { data } = await supabase.from('users').select('history').eq('phone', phone).single();
-      if (data?.history) setSearchHistory(data.history.split(',').filter(Boolean));
-    } catch (err) { console.error('Error loading history:', err); }
+      const response = await fetch(`/api/auth/get-profile?phone=${encodeURIComponent(phone)}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.user?.history) {
+          setSearchHistory(result.user.history.split(',').filter(Boolean));
+        }
+      }
+    } catch (err) {
+      // Fallback to local
+    }
   }
 
   async function handleSearch(code: string) {

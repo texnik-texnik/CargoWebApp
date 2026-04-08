@@ -29,11 +29,9 @@ export default function ProfilePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('ProfilePage mounted - loading user...');
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       const parsed = JSON.parse(savedUser);
-      console.log('User from localStorage:', parsed);
       setPhone(parsed.phone || '');
       setIsAuthenticated(true);
       // Принудительно загружаем профиль каждый раз
@@ -52,14 +50,12 @@ export default function ProfilePage() {
       return;
     }
     try {
-      console.log('Loading profile for phone:', p);
       
       // Используем serverless API вместо прямого Supabase запроса
       const response = await fetch(`/api/auth/get-profile?phone=${encodeURIComponent(p)}`);
       
       if (!response.ok) {
         const err = await response.json();
-        console.error('API error:', err);
         
         // Если пользователь не найден
         if (response.status === 404) {
@@ -76,16 +72,10 @@ export default function ProfilePage() {
       const data = result.user;
       
       if (data) {
-        console.log('========== PROFILE LOADED ==========');
-        console.log('Full data from DB:', JSON.stringify(data, null, 2));
-        console.log('DB name:', data.name, '| type:', typeof data.name);
-        console.log('DB lang:', data.lang, '| type:', typeof data.lang);
         
         // ОДИН вызов setUserData для всех полей
         setUserData(data);
         
-        console.log('userData set to:', data);
-        console.log('=====================================');
         
         // Если имя не введён - показываем диалог
         if (!data.name || data.name.trim() === '') {
@@ -95,7 +85,6 @@ export default function ProfilePage() {
         await loadMyTracks(data.history);
       }
     } catch (err: any) {
-      console.error('Load profile error:', err);
       setError(`Ошибка загрузки: ${err.message || 'Неизвестная ошибка'}`);
       // Fallback: показываем минимальный профиль
       setUserData({ phone: p, name: '', lang: 'ru' });
@@ -110,7 +99,6 @@ export default function ProfilePage() {
       if (codes.length === 0) return;
       const { data } = await supabase.from('tracks').select('*').in('code', codes.slice(0, 10));
       if (data) setMyTracks(data);
-    } catch (error) { console.error('Error loading tracks:', error); }
     finally { setLoadingTracks(false); }
   }
 
@@ -141,7 +129,6 @@ export default function ProfilePage() {
       setSuccessMessage('✅ Профиль успешно сохранён!');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error: any) {
-      console.error('Error saving:', error);
       setError(`Ошибка сохранения: ${error.message}`);
     }
     finally { setSaving(false); }
@@ -159,7 +146,6 @@ export default function ProfilePage() {
       const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({ ...savedUser, name: pendingName.trim() }));
     } catch (error: any) {
-      console.error('Error saving userData?.name:', error);
       setError('Не удалось сохранить имя');
     }
     finally { setSaving(false); }
@@ -180,7 +166,6 @@ export default function ProfilePage() {
         setUserData((prev: any) => ({ ...prev, history: newHistory.join(',') }));
       }
     } catch (error) {
-      console.error('Error saving track to history:', error);
     }
   }
 
@@ -196,7 +181,6 @@ export default function ProfilePage() {
 
   const copyAddress = async () => {
     try { await navigator.clipboard.writeText(fullAddress); setCopied(true); setTimeout(() => setCopied(false), 2000); }
-    catch (e) { console.error('Copy failed:', e); }
   };
 
   const statusLabels: Record<string, string> = { waiting: 'Ожидание', received: 'Получен', intransit: 'В пути', border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен' };
@@ -348,14 +332,6 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
       
-      {/* Отладочная информация */}
-      <div className="mt-4 p-4 bg-gray-100 rounded text-xs space-y-1">
-        <p><strong>Отладка:</strong></p>
-        <p>userData?.name: "{userData?.name}"</p>
-        <p>userData?.lang: "{userData?.lang}"</p>
-        <p>userData.name: "{userData?.name}"</p>
-        <p>userData.lang: "{userData?.lang}"</p>
-      </div>
     </div>
   );
 }
