@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase/client';
+import { supabase } from '../../lib/supabase/client';
 
 interface AdminRouteProps {
   children: React.ReactNode;
