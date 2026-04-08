@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [pendingName, setPendingName] = useState('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -99,13 +100,26 @@ export default function ProfilePage() {
     if (!phone || !name.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase.from('users').update({ name: name.trim(), lang }).eq('phone', phone);
-      if (error) throw error;
+      // Используем serverless API для обхода RLS
+      const response = await fetch('/api/auth/save-name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, name: name.trim(), lang }),
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Ошибка сохранения');
+      }
+      
       setEditing(false);
+      setSuccessMessage('✅ Профиль успешно сохранён!');
+      setTimeout(() => setSuccessMessage(null), 3000);
       await loadUserProfile(phone);
       localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: name.trim(), lang }));
     } catch (error: any) {
       console.error('Error saving:', error);
+      setError(`Ошибка сохранения: ${error.message}`);
     }
     finally { setSaving(false); }
   }
@@ -203,6 +217,11 @@ export default function ProfilePage() {
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-800 font-medium text-sm">⚠️ {error}</p>
           <p className="text-red-600 text-xs mt-1">Профиль загружен в ограниченном режиме</p>
+        </div>
+      )}
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-800 font-medium text-sm">{successMessage}</p>
         </div>
       )}
       <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Профиль</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : 'Управление профилем'}</p></div>
