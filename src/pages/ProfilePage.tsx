@@ -183,6 +183,7 @@ export default function ProfilePage() {
 
   const copyAddress = async () => {
     try { await navigator.clipboard.writeText(fullAddress); setCopied(true); setTimeout(() => setCopied(false), 2000); }
+    catch (e) { /* ignore */ }
   };
 
   const statusLabels: Record<string, string> = { waiting: 'Ожидание', received: 'Получен', intransit: 'В пути', border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен' };
