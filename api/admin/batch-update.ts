@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { startDate, endDate, newStatus, dateColumn = 'intransit_date' } = req.body;
     if (!startDate || !endDate || !newStatus) return res.status(400).json({ error: 'Укажите даты и статус' });
 
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createClient(process.env.REACT_APP_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     const dateColMap: Record<string, string> = { received: 'received_date', intransit: 'intransit_date', border: 'border_date', warehouse: 'warehouse_date', delivered: 'delivered_date' };
 
     const { data: tracks, error: fetchError } = await supabase.from('tracks').select('code').gte(dateColumn, `${startDate} 00:00:00+00`).lte(dateColumn, `${endDate} 23:59:59+00`).not(dateColumn, 'is', null);

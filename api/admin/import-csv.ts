@@ -35,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const unique = new Map();
     tracksToInsert.forEach((t: any) => { if (t) unique.set(t.code, t); });
 
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createClient(process.env.REACT_APP_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     const { data, error } = await supabase.from('tracks').upsert(Array.from(unique.values()), { onConflict: 'code' }).select();
     if (error) return res.status(500).json({ error: error.message });
 

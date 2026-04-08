@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { phone, name, lang } = req.body;
     if (!phone || !name) return res.status(400).json({ error: 'Укажите телефон и имя' });
     
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    const supabase = createClient(process.env.REACT_APP_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     
     const updateData: any = { name: name.trim() };
     if (lang) updateData.lang = lang;
