@@ -16,5 +16,25 @@
       "source": "/static/(js|css|media)/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
-  ]
+  ],
+  "functions": {
+    "api/telegram/webhook.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/auth/verify-code.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/auth/save-name.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/admin/import-csv.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/admin/batch-update.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/ai/chat.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    }
+  }
 }
