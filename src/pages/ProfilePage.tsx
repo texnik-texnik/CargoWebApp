@@ -16,7 +16,6 @@ import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
   const [userData, setUserData] = useState<any>(null);
-  const [_refreshKey, setRefreshKey] = useState(0);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -139,9 +138,6 @@ export default function ProfilePage() {
       
       // Потом перезагружаем с сервера
       await loadUserProfile(phone);
-      
-      // Принудительный ре-рендер
-      setRefreshKey(prev => prev + 1);
       
       setEditing(false);
       setSuccessMessage('✅ Профиль успешно сохранён!');
