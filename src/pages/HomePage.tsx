@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Search, Info, TrendingUp, User } from 'lucide-react';
+import { Package, Search, Info, TrendingUp, User, Ban, ScrollText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -53,9 +53,16 @@ export default function HomePage() {
   const quickActions = [
     { icon: Search, label: 'Поиск трека', href: '/tracks', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
     { icon: Info, label: 'Тарифы', href: '/info/prices', color: 'text-green-500', bgColor: 'bg-green-500/10' },
-    { icon: TrendingUp, label: 'Статистика', href: '/dashboard', color: 'text-orange-500', bgColor: 'bg-orange-500/10' },
-    { icon: User, label: 'Профиль', href: '/profile', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+    { icon: Ban, label: 'Запрещенные', href: '/info/banned', color: 'text-red-500', bgColor: 'bg-red-500/10' },
+    { icon: ScrollText, label: 'Шартҳо', href: '/info/terms', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+    { icon: User, label: 'Профиль', href: '/profile', color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
   ];
+
+  // Статистика только для админов
+  const isAdmin = user?.is_admin === true || user?.role === 'admin';
+  if (isAdmin) {
+    quickActions.unshift({ icon: TrendingUp, label: 'Статистика', href: '/dashboard', color: 'text-orange-500', bgColor: 'bg-orange-500/10' });
+  }
 
   const statusColors: Record<string, string> = {
     waiting: 'bg-yellow-500', received: 'bg-blue-500', intransit: 'bg-indigo-500',
@@ -96,7 +103,7 @@ export default function HomePage() {
                   <div className={`rounded-full ${action.bgColor} p-4 mb-3 inline-flex`}>
                     <action.icon className={`h-6 w-6 ${action.color}`} />
                   </div>
-                  <p className="text-sm font-medium">{action.label}</p>
+                  <p className="text-sm font-medium text-center">{action.label}</p>
                 </CardContent>
               </Card>
             </Link>
