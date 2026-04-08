@@ -132,12 +132,12 @@ export default function ProfilePage() {
       const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: name.trim(), lang };
       localStorage.setItem('user', JSON.stringify(updatedUser));
       
-      // Затем обновляем локальные состояния
+      // Обновляем userData локально (без перезагрузки из БД)
+      setUserData((prev: any) => ({ ...prev, name: name.trim(), lang }));
+      
+      // Обновляем локальные состояния явно
       setName(name.trim());
       setLang(lang);
-      
-      // Потом перезагружаем с сервера
-      await loadUserProfile(phone);
       
       setEditing(false);
       setSuccessMessage('✅ Профиль успешно сохранён!');
