@@ -12,9 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Alert, AlertDescription } from '../components/ui/alert';
+import { useAppLanguage } from '../hooks/useLanguage';
 import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
+  const { t, lang, setLang } = useAppLanguage();
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState('');
@@ -266,7 +268,7 @@ export default function ProfilePage() {
                 <Input id="phone" type="tel" value={phone} disabled className="mt-2" /></div>
               <Separator />
               <div><Label htmlFor="language" className="flex items-center gap-2"><Globe className="h-4 w-4" /> Язык</Label>
-                <Select value={userData?.lang} onValueChange={(val) => setUserData((prev: any) => ({ ...prev, lang: val }))} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
+                <Select value={lang} onValueChange={(val) => setLang(val as 'ru' | 'tj')} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
             </div>
             <div className="mt-6 flex gap-2">
               {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? 'Сохранение...' : 'Сохранить'}</Button><Button variant="outline" onClick={() => setEditing(false)}>Отмена</Button></>)

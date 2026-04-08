@@ -6,9 +6,11 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Skeleton } from '../components/ui/skeleton';
 import { Separator } from '../components/ui/separator';
+import { useAppLanguage } from '../hooks/useLanguage';
 import { supabase } from '../lib/supabase/client';
 
 export default function HomePage() {
+  const { t } = useAppLanguage();
   const [user, setUser] = useState<any>(null);
   const [recentTracks, setRecentTracks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,17 +53,17 @@ export default function HomePage() {
   }
 
   const quickActions = [
-    { icon: Search, label: 'Поиск трека', href: '/tracks', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
-    { icon: Info, label: 'Тарифы', href: '/info/prices', color: 'text-green-500', bgColor: 'bg-green-500/10' },
-    { icon: Ban, label: 'Запрещенные', href: '/info/banned', color: 'text-red-500', bgColor: 'bg-red-500/10' },
-    { icon: ScrollText, label: 'Шартҳо', href: '/info/terms', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
-    { icon: User, label: 'Профиль', href: '/profile', color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
+    { icon: Search, label: t.searchTrack, href: '/tracks', color: 'text-blue-500', bgColor: 'bg-blue-500/10' },
+    { icon: Info, label: t.prices, href: '/info/prices', color: 'text-green-500', bgColor: 'bg-green-500/10' },
+    { icon: Ban, label: t.banned, href: '/info/banned', color: 'text-red-500', bgColor: 'bg-red-500/10' },
+    { icon: ScrollText, label: t.terms, href: '/info/terms', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
+    { icon: User, label: t.profile, href: '/profile', color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
   ];
 
   // Статистика только для админов
   const isAdmin = user?.is_admin === true || user?.role === 'admin';
   if (isAdmin) {
-    quickActions.unshift({ icon: TrendingUp, label: 'Статистика', href: '/dashboard', color: 'text-orange-500', bgColor: 'bg-orange-500/10' });
+    quickActions.unshift({ icon: TrendingUp, label: t.statistics, href: '/dashboard', color: 'text-orange-500', bgColor: 'bg-orange-500/10' });
   }
 
   const statusColors: Record<string, string> = {
@@ -88,13 +90,13 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <Card className="mb-6 bg-gradient-to-br from-primary to-primary/80 text-white border-0">
         <CardHeader>
-          <CardTitle className="text-2xl">Добро пожаловать, {user?.name || user?.first_name || 'Пользователь'}! 👋</CardTitle>
-          <CardDescription className="text-white/90">Отслеживайте ваши грузы из Китая в Таджикистан</CardDescription>
+          <CardTitle className="text-2xl">{t.welcome}, {user?.name || user?.first_name || 'Пользователь'}! 👋</CardTitle>
+          <CardDescription className="text-white/90">{t.trackCargo}</CardDescription>
         </CardHeader>
       </Card>
 
       <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-3">Быстрые действия</h3>
+        <h3 className="text-lg font-semibold mb-3">{t.quickActions}</h3>
         <div className="grid grid-cols-2 gap-3">
           {quickActions.map((action) => (
             <Link key={action.href} to={action.href}>
@@ -116,8 +118,8 @@ export default function HomePage() {
       {recentTracks.length > 0 ? (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold">Последние треки</h3>
-            <Link to="/tracks"><Button variant="link" size="sm">Все треки</Button></Link>
+            <h3 className="text-lg font-semibold">{t.recentTracks}</h3>
+            <Link to="/tracks"><Button variant="link" size="sm">{t.allTracks}</Button></Link>
           </div>
           <div className="space-y-2">
             {recentTracks.map((track) => (
@@ -143,9 +145,9 @@ export default function HomePage() {
         <Card>
           <CardContent className="pt-6 text-center">
             <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-            <CardTitle className="text-lg mb-2">У вас пока нет треков</CardTitle>
-            <CardDescription className="mb-4">Начните с поиска по трек-номеру</CardDescription>
-            <Link to="/tracks"><Button><Search className="mr-2 h-4 w-4" /> Найти трек</Button></Link>
+            <CardTitle className="text-lg mb-2">{t.noTracks}</CardTitle>
+            <CardDescription className="mb-4">{t.startSearch}</CardDescription>
+            <Link to="/tracks"><Button><Search className="mr-2 h-4 w-4" /> {t.findTrack}</Button></Link>
           </CardContent>
         </Card>
       )}
