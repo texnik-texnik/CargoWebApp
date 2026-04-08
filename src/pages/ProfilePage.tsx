@@ -353,6 +353,15 @@ export default function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {/* Отладочная информация */}
+      <div className="mt-4 p-4 bg-gray-100 rounded text-xs space-y-1">
+        <p><strong>Отладка:</strong></p>
+        <p>name: "{name}"</p>
+        <p>lang: "{lang}"</p>
+        <p>userData.name: "{userData?.name}"</p>
+        <p>userData.lang: "{userData?.lang}"</p>
+      </div>
     </div>
   );
 }
