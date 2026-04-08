@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { DollarSign, Ban, MapPin, ChevronRight } from 'lucide-react';
+import { DollarSign, Ban, MapPin, ScrollText, ChevronRight } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function InfoPage() {
@@ -7,6 +7,7 @@ export default function InfoPage() {
     { title: 'Тарифы', desc: 'Стоимость доставки и сроки', icon: DollarSign, href: '/info/prices', color: 'text-green-500' },
     { title: 'Запрещенные товары', desc: 'Что нельзя доставлять', icon: Ban, href: '/info/banned', color: 'text-red-500' },
     { title: 'Адреса', desc: 'Наши офисы в Китае и Таджикистане', icon: MapPin, href: '/info/addresses', color: 'text-blue-500' },
+    { title: 'Шартҳо ва қоидаҳо', desc: 'Қоидаҳои хизматрасонии KHUROSON CARGO', icon: ScrollText, href: '/info/terms', color: 'text-purple-500' },
   ];
 
   return (
