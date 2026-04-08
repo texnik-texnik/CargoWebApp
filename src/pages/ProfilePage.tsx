@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { User, Phone, Globe, Save, LogOut, Package, ChevronRight, Copy, Check } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { User, Phone, Globe, Save, LogOut, Package, ChevronRight, Copy, Check, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -10,9 +10,12 @@ import { Separator } from '../components/ui/separator';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState('');
@@ -24,6 +27,8 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [pendingName, setPendingName] = useState('');
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -64,6 +69,12 @@ export default function ProfilePage() {
         setUserData(data);
         setName(data.name || '');
         setLang(data.lang || 'ru');
+        
+        // Если имя не введён - показываем диалог
+        if (!data.name || data.name.trim() === '') {
+          setShowNamePrompt(true);
+        }
+        
         await loadMyTracks(data.history);
       }
     } catch (err: any) {
@@ -91,10 +102,48 @@ export default function ProfilePage() {
     try {
       const { error } = await supabase.from('users').update({ name: name.trim(), lang }).eq('phone', phone);
       if (error) throw error;
-      setEditing(false); await loadUserProfile(phone);
+      setEditing(false);
+      await loadUserProfile(phone);
       localStorage.setItem('user', JSON.stringify({ ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: name.trim(), lang }));
-    } catch (error: any) { console.error('Error saving:', error); }
+    } catch (error: any) {
+      console.error('Error saving:', error);
+    }
     finally { setSaving(false); }
+  }
+
+  async function handleSaveName() {
+    if (!pendingName.trim() || !phone) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('users').update({ name: pendingName.trim() }).eq('phone', phone);
+      if (error) throw error;
+      setShowNamePrompt(false);
+      setName(pendingName.trim());
+      await loadUserProfile(phone);
+      const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...savedUser, name: pendingName.trim() }));
+    } catch (error: any) {
+      console.error('Error saving name:', error);
+      setError('Не удалось сохранить имя');
+    }
+    finally { setSaving(false); }
+  }
+
+  async function saveTrackToHistory(trackCode: string) {
+    if (!phone) return;
+    try {
+      const user = await supabase.from('users').select('history').eq('phone', phone).single();
+      if (user.data) {
+        const history = user.data.history ? user.data.history.split(',').filter(Boolean) : [];
+        // Добавляем трек в начало и убираем дубликаты
+        const newHistory = [trackCode, ...history.filter((c: string) => c !== trackCode)].slice(0, 50);
+        await supabase.from('users').update({ history: newHistory.join(',') }).eq('phone', phone);
+        // Обновляем локально
+        setUserData((prev: any) => ({ ...prev, history: newHistory.join(',') }));
+      }
+    } catch (error) {
+      console.error('Error saving track to history:', error);
+    }
   }
 
   function handleLogout() {
@@ -224,6 +273,37 @@ export default function ProfilePage() {
           </CardContent></Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog для запроса имени */}
+      <Dialog open={showNamePrompt} onOpenChange={setShowNamePrompt}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>👋 Добро пожаловать!</DialogTitle>
+            <DialogDescription>
+              Для полного доступа к профилю пожалуйста введите ваше имя латиницей
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              placeholder="Например: Ivan Ivanov"
+              value={pendingName}
+              onChange={(e) => setPendingName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+            />
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Имя будет использоваться для генерации адреса склада в Китае
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleSaveName} disabled={saving || !pendingName.trim()}>
+              {saving ? 'Сохранение...' : 'Сохранить'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
