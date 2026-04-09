@@ -8,8 +8,11 @@ import { Separator } from '../components/ui/separator';
 
 interface Message { id: string; role: 'user' | 'assistant'; content: string; timestamp: Date; }
 
+import { useAppLanguage } from '../hooks/useLanguage';
+
 export default function AIChatPage() {
-  const [messages, setMessages] = useState<Message[]>([{ id: '1', role: 'assistant', content: 'Здравствуйте! Чем могу помочь?', timestamp: new Date() }]);
+  const { t } = useAppLanguage();
+  const [messages, setMessages] = useState<Message[]>([{ id: '1', role: 'assistant', content: t.aiGreeting, timestamp: new Date() }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -24,9 +27,9 @@ export default function AIChatPage() {
     try {
       const response = await fetch('/api/ai/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: userMessage.content }) });
       const data = await response.json();
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: data.response || 'Не удалось получить ответ.', timestamp: new Date() }]);
+      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: data.response || t.aiError, timestamp: new Date() }]);
     } catch (error) {
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Ошибка.', timestamp: new Date() }]);
+      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: t.aiFallback, timestamp: new Date() }]);
     } finally { setLoading(false); }
   };
 

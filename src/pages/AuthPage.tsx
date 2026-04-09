@@ -38,7 +38,7 @@ export default function AuthPage() {
     
     if (!tg) {
       // Не в Telegram - показываем ошибку
-      setError('Приложение работает только внутри Telegram. Откройте через @JinjakBot');
+      setError(t.appTelegramOnly);
       setStep('done');
       return;
     }

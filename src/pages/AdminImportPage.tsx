@@ -8,7 +8,10 @@ import { Separator } from '../components/ui/separator';
 
 const statusLabels: Record<string, string> = { waiting: 'Ожидает', received: 'Получен', intransit: 'В пути', border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен' };
 
+import { useAppLanguage } from '../hooks/useLanguage';
+
 export default function AdminImportPage() {
+  const { t } = useAppLanguage();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -26,7 +29,7 @@ export default function AdminImportPage() {
       formData.append('file', file);
       const response = await fetch('/api/admin/import-csv', { method: 'POST', body: formData });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Ошибка загрузки');
+      if (!response.ok) throw new Error(data.error || 'Upload error');
       setResult(data);
     } catch (err: any) { setError(err.message); }
     finally { setUploading(false); }
@@ -51,7 +54,7 @@ export default function AdminImportPage() {
             <input type="file" accept=".csv" onChange={handleFileChange} className="hidden" />
             <div className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors hover:border-primary hover:bg-accent">
               <Upload className="h-8 w-8 text-muted-foreground" />
-              <div className="text-center"><p className="font-medium">{file ? file.name : 'Выберите CSV файл'}</p><p className="text-sm text-muted-foreground">{file ? `${(file.size / 1024).toFixed(2)} KB` : 'Нажмите для выбора'}</p></div>
+              <div className="text-center"><p className="font-medium">{file ? file.name : t.selectCSV}</p><p className="text-sm text-muted-foreground">{file ? `${(file.size / 1024).toFixed(2)} KB` : t.clickSelect}</p></div>
             </div>
           </label>
           <Button onClick={handleUpload} disabled={!file || uploading} className="w-full" size="lg">

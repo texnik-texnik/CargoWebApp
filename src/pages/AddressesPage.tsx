@@ -3,16 +3,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Separator } from '../components/ui/separator';
 
+import { useAppLanguage } from '../hooks/useLanguage';
+
 export default function AddressesPage() {
+  const { t } = useAppLanguage();
   const chinaAddress = {
-    title: 'Китай (Гуанчжоу)',
+    title: t.chinaWarehouse,
     address: '广东省广州市白云区石井街石沙路288号',
     phone: '+86 130 0000 0000',
     hours: 'Пн-Сб: 9:00 - 18:00 (GMT+8)',
     email: 'china@khuroson.com',
   };
   const tajikistanAddress = {
-    title: 'Таджикистан (Душанбе)',
+    title: t.tajikistanOffice,
     address: 'г. Душанбе, ул. Примерная, д. 123',
     phone: '+992 00 000 00 00',
     hours: 'Пн-Сб: 9:00 - 18:00 (GMT+5)',

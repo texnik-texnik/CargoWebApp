@@ -13,7 +13,10 @@ interface Price {
   currency: string;
 }
 
+import { useAppLanguage } from '../hooks/useLanguage';
+
 export default function PricesPage() {
+  const { t } = useAppLanguage();
   const [prices, setPrices] = useState<Price[]>([]);
   const [loading, setLoading] = useState(true);
 

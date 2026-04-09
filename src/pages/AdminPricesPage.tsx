@@ -16,7 +16,10 @@ interface Price {
   currency: string;
 }
 
+import { useAppLanguage } from '../hooks/useLanguage';
+
 export default function AdminPricesPage() {
+  const { t } = useAppLanguage();
   const [prices, setPrices] = useState<Price[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +52,7 @@ export default function AdminPricesPage() {
     const price = parseFloat(editData.price);
 
     if (isNaN(weightFrom) || isNaN(price)) {
-      setError('Заполните вес и цену корректно');
+      setError(t.fillWeightPrice);
       return;
     }
 
@@ -104,7 +107,7 @@ export default function AdminPricesPage() {
     const price = parseFloat(newData.price);
 
     if (isNaN(weightFrom) || isNaN(price)) {
-      setError('Заполните вес и цену корректно');
+      setError(t.fillWeightPrice);
       return;
     }
 

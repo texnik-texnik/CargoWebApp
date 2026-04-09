@@ -21,10 +21,10 @@ export default function AdminBatchUpdatePage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const columnLabels: Record<string, string> = { intransit_date: '出库时间 (Отправка)', received_date: '入库时间 (Получение)', border_date: 'Дата границы', warehouse_date: 'Дата склада', delivered_date: 'Дата доставки' };
+  const columnLabels: Record<string, string> = { intransit_date: t.dispatchTime, received_date: t.receivingTime, border_date: t.borderDate, warehouse_date: t.warehouseDate, delivered_date: t.deliveryDate };
 
   const handleBatchUpdate = async () => {
-    if (!startDate || !endDate || !newStatus) { setError('Заполните все поля'); return; }
+    if (!startDate || !endDate || !newStatus) { setError(t.fillAllFields); return; }
     setUpdating(true); setError(null); setResult(null);
     try {
       const response = await fetch('/api/admin/batch-update', {

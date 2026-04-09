@@ -42,9 +42,9 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         {[
           { title: t.totalTracks, value: stats.totalTracks, icon: Package, color: 'text-blue-500' },
-          { title: 'Активных', value: stats.activeTracks, icon: TrendingUp, color: 'text-orange-500' },
+          { title: t.activeTracks, value: stats.activeTracks, icon: TrendingUp, color: 'text-orange-500' },
           { title: t.deliveredCount, value: stats.deliveredTracks, icon: AlertCircle, color: 'text-green-500' },
-          { title: 'Пользователей', value: stats.totalUsers, icon: Users, color: 'text-purple-500' },
+          { title: t.totalUsers, value: stats.totalUsers, icon: Users, color: 'text-purple-500' },
         ].map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{stat.title}</CardTitle><stat.icon className={`h-4 w-4 ${stat.color}`} /></CardHeader>
@@ -56,9 +56,9 @@ export default function DashboardPage() {
         <CardContent>
           <div className="grid gap-2 sm:grid-cols-2">
             {[
-              { title: 'Поиск треков', desc: 'Найти по номеру', href: '/tracks' },
-              { title: 'Тарифы', desc: 'Стоимость доставки', href: '/info/prices' },
-              { title: 'Профиль', desc: 'Настройки аккаунта', href: '/profile' },
+              { title: t.searchTracks, desc: t.findByNumber, href: '/tracks' },
+              { title: t.pricesTitle, desc: t.shippingCost, href: '/info/prices' },
+              { title: t.profile, desc: t.accountSettings, href: '/profile' },
             ].map((item) => (
               <Link key={item.href} to={item.href} className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent">
                 <div><p className="font-medium">{item.title}</p><p className="text-sm text-muted-foreground">{item.desc}</p></div>
