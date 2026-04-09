@@ -11,7 +11,6 @@ import { supabase } from '../lib/supabase/client';
 
 export default function TracksPage() {
   const { t } = useAppLanguage();
-  const { t } = useAppLanguage();
   const [searchParams] = useSearchParams();
   const [searchCode, setSearchCode] = useState(searchParams.get('code') || '');
   const [searchResults, setSearchResults] = useState<any[]>([]);
