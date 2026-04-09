@@ -87,7 +87,7 @@ export default function TracksPage() {
       
       // Всегда сохраняем трек в историю
       await saveTrackToHistory(code);
-    } catch (err: any) { setError(err.message || 'Ошибка поиска'); }
+    } catch (err: any) { setError(err.message || 'Search error'); }
     finally { setLoading(false); }
   }
 
@@ -107,7 +107,7 @@ export default function TracksPage() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <Card className="mb-6">
-        <CardHeader><CardTitle>Поиск трека</CardTitle><CardDescription>Введите трек-номер для отслеживания</CardDescription></CardHeader>
+        <CardHeader><CardTitle>{t.trackSearch}</CardTitle><CardDescription>Введите трек-номер для отслеживания</CardDescription></CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <div className="relative flex-1">
@@ -154,7 +154,7 @@ export default function TracksPage() {
       {searchCode && searchResults.length === 0 && !loading && (
         <Card><CardContent className="pt-6 text-center">
           <Search className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-semibold">Ничего не найдено</h3>
+          <h3 className="mb-2 text-lg font-semibold">'Nothing found'/h3>
           <p className="text-sm text-muted-foreground">Проверьте правильность введенного кода</p>
         </CardContent></Card>
       )}

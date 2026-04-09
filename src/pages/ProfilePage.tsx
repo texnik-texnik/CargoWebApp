@@ -205,7 +205,7 @@ export default function ProfilePage() {
           <h2 className="text-2xl font-bold mb-2">Войдите в профиль</h2>
           <p className="text-muted-foreground mb-6">Для доступа к профилю необходимо авторизоваться через Telegram</p>
           <Link to="/auth">
-            <Button>Войти</Button>
+            <Button>{t.verify}</Button>
           </Link>
         </div>
       </div>
@@ -241,11 +241,11 @@ export default function ProfilePage() {
           <p className="text-green-800 font-medium text-sm">{successMessage}</p>
         </div>
       )}
-      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Профиль</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : t.profileDesc}</p></div>
+      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">{t.profileTitle}</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : t.profileDesc}</p></div>
 
       <Tabs defaultValue="profile" className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="profile">Профиль</TabsTrigger>
+          <TabsTrigger value="profile">{t.profileTitle}</TabsTrigger>
           <TabsTrigger value="address">Адрес</TabsTrigger>
           <TabsTrigger value="tracks">Мои треки</TabsTrigger>
         </TabsList>
@@ -271,8 +271,8 @@ export default function ProfilePage() {
                 <Select value={lang} onValueChange={(val) => setLang(val as 'ru' | 'tj')} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
             </div>
             <div className="mt-6 flex gap-2">
-              {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? t.saving : t.saveBtn}</Button><Button variant="outline" onClick={() => setEditing(false)}>Отмена</Button></>)
-                : (<Button onClick={() => setEditing(true)} className="flex-1">Редактировать</Button>)}
+              {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? t.saving : t.saveBtn}</Button><Button variant="outline" onClick={() => setEditing(false)}>{t.cancelBtn}</Button></>)
+                : (<Button onClick={() => setEditing(true)} className="flex-1">{t.edit}</Button>)}
             </div>
           </CardContent></Card>
 
@@ -306,7 +306,7 @@ export default function ProfilePage() {
                     </div>
                   </Link>
                 ))}</div>
-              : <div className="py-8 text-center"><Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" /><h3 className="text-lg font-semibold mb-2">У вас пока нет треков</h3><Link to="/tracks"><Button>Найти трек</Button></Link></div>}
+              : <div className="py-8 text-center"><Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" /><h3 className="text-lg font-semibold mb-2">У вас пока нет треков</h3><Link to="/tracks"><Button>{t.findTrack}</Button></Link></div>}
           </CardContent></Card>
         </TabsContent>
       </Tabs>
