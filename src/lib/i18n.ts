@@ -235,7 +235,6 @@ export const translations = {
     authTelegram: 'Авторизатсия тавассути Telegram...', validPhone: 'Рақами телефонро дуруст ворид кунед',
     aiGreeting: 'Салом! Чӣ хел метавонам кӯмак кунам?', aiError: 'Ҷавоб гирифта нашуд.',
     aiFallback: 'Хатогӣ.', messagePlaceholder: 'Паём...',
-}
 
   },
 };
@@ -243,4 +242,4 @@ export const translations = {
 export type Language = 'ru' | 'tj';
 
 export function useTranslation(lang: Language = 'ru') {
-  return translations[lang] || translations.ru;
+  return translations[lang] || translations.ru;}
