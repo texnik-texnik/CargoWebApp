@@ -86,7 +86,7 @@ export const translations = {
     step1: 'Шаг 1: Получите трек-номер', step2: 'Шаг 2: Укажите трек-номер на посылке',
     step3: 'Шаг 3: Отправьте груз', step4: 'Шаг 4: Отслеживайте статус',
     // Dashboard
-    activeTracks: 'Активных', totalUsers: 'Пользователей', quickActions: 'Быстрые действия',
+    activeTracks: 'Активных', totalUsers: 'Пользователей',
     goToMain: 'Переход к основным разделам', searchTracks: 'Поиск треков',
     findByNumber: 'Найти по номеру', shippingCost: 'Стоимость доставки',
     accountSettings: 'Настройки аккаунта', go: 'Перейти',
@@ -207,7 +207,7 @@ export const translations = {
     findWarehouse: 'Чӣ тавр анборро дар Чин ёфтан мумкин?', warehouseInstructions: 'Дастурҳо барои фиристодани бор',
     step1: 'Қадами 1: Рақами трекро гиред', step2: 'Қадами 2: Рақами трекро дар бозор нависед',
     step3: 'Қадами 3: Борро фиристед', step4: 'Қадами 4: Вазъиятро пайгирӣ кунед',
-    activeTracks: 'Фаъол', totalUsers: 'Истифодабарандагон', quickActions: 'Амалҳои зуд',
+    activeTracks: 'Фаъол', totalUsers: 'Истифодабарандагон',
     goToMain: 'Гузариш ба бахшҳои асосӣ', searchTracks: 'Ҷустуҷӯи трекҳо',
     findByNumber: 'Ёфтан аз рӯи рақам', shippingCost: 'Арзиши интиқол',
     accountSettings: 'Танзимоти ҳисоб', go: 'Гузариш',
