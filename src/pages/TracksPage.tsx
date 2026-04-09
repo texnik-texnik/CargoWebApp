@@ -154,7 +154,7 @@ export default function TracksPage() {
       {searchCode && searchResults.length === 0 && !loading && (
         <Card><CardContent className="pt-6 text-center">
           <Search className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-semibold">'Nothing found'/h3>
+          <h3 className="mb-2 text-lg font-semibold">Ничего не найдено</h3>
           <p className="text-sm text-muted-foreground">Проверьте правильность введенного кода</p>
         </CardContent></Card>
       )}
