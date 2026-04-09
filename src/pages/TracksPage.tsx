@@ -1,5 +1,4 @@
 import { useAppLanguage } from '../hooks/useLanguage';
-import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, ScanLine, History, X } from 'lucide-react';
@@ -18,7 +17,6 @@ export default function TracksPage() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
