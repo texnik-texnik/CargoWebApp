@@ -201,13 +201,6 @@ export const translations = {
     termsResponsibilityDesc: 'Ширкати KHUROSON CARGO танҳо баъд аз расидани бор ба анбори мо барои он ҷавобгар мешавад. Масъалаҳое, ки то расидани бор ба анбори мо рух медиҳанд, ба масъулияти ширкат дохил намешаванд.',
     termsForceMajeure: '5. Ҳолатҳои ғайричашмдошт (Форс-мажор)',
     termsForceMajeureDesc: 'Дар ҳолатҳои ғайричашмдошт, мисли: карантин ё пандемия, офатҳои табиӣ, таъхир ё манъи парвозҳо, ҷанг ё маҳдудиятҳои воридоту содирот — мӯҳлати интиқол метавонад дароз шавад. Дар чунин ҳолатҳо, ҷуброни зарар аз ҷониби ширкат пешбинӣ намешавад.',
-  },
-};
-
-export type Language = 'ru' | 'tj';
-
-export function useTranslation(lang: Language = 'ru') {
-  return translations[lang] || translations.ru;
     // Additional TJ keys
     chinaWarehouse: 'Чин (Гуанчжоу)', tajikistanOffice: 'Тоҷикистон (Душанбе)',
     warehouseAddress: 'Суроға', phoneLabel: 'Телефон', hours: 'Вақти корӣ',
@@ -243,3 +236,11 @@ export function useTranslation(lang: Language = 'ru') {
     aiGreeting: 'Салом! Чӣ хел метавонам кӯмак кунам?', aiError: 'Ҷавоб гирифта нашуд.',
     aiFallback: 'Хатогӣ.', messagePlaceholder: 'Паём...',
 }
+
+  },
+};
+
+export type Language = 'ru' | 'tj';
+
+export function useTranslation(lang: Language = 'ru') {
+  return translations[lang] || translations.ru;

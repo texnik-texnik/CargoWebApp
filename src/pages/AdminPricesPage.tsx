@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2, Save, X } from 'lucide-react';
@@ -16,7 +17,6 @@ interface Price {
   currency: string;
 }
 
-import { useAppLanguage } from '../hooks/useLanguage';
 
 export default function AdminPricesPage() {
   const { t } = useAppLanguage();

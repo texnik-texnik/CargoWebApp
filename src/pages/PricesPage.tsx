@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
@@ -13,7 +14,6 @@ interface Price {
   currency: string;
 }
 
-import { useAppLanguage } from '../hooks/useLanguage';
 
 export default function PricesPage() {
   const { t } = useAppLanguage();
