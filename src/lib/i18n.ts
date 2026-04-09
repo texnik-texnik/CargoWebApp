@@ -242,4 +242,5 @@ export const translations = {
 export type Language = 'ru' | 'tj';
 
 export function useTranslation(lang: Language = 'ru') {
-  return translations[lang] || translations.ru;}
+  return translations[lang] || translations.ru;
+}
