@@ -1,3 +1,4 @@
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Phone, Globe, Save, LogOut, Package, ChevronRight, Copy, Check, AlertCircle } from 'lucide-react';
@@ -16,6 +17,7 @@ import { useAppLanguage } from '../hooks/useLanguage';
 import { supabase } from '../lib/supabase/client';
 
 export default function ProfilePage() {
+  const { t } = useAppLanguage();
   const { t, lang, setLang } = useAppLanguage();
   const [userData, setUserData] = useState<any>(null);
   const [editing, setEditing] = useState(false);
@@ -47,7 +49,7 @@ export default function ProfilePage() {
 
   async function loadUserProfile(p: string) {
     if (!p) {
-      setError('Телефон не указан');
+      setError('Phone not specified');
       setUserData({ phone: '', name: '', lang: 'ru' });
       return;
     }

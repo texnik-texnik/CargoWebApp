@@ -1,4 +1,5 @@
 import { useAppLanguage } from '../hooks/useLanguage';
+import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, ScanLine, History, X } from 'lucide-react';
@@ -10,6 +11,7 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { supabase } from '../lib/supabase/client';
 
 export default function TracksPage() {
+  const { t } = useAppLanguage();
   const { t } = useAppLanguage();
   const [searchParams] = useSearchParams();
   const [searchCode, setSearchCode] = useState(searchParams.get('code') || '');
