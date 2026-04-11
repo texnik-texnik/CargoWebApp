@@ -1,4 +1,5 @@
 import { useAppLanguage } from '../hooks/useLanguage';
+import { authenticatedFetch } from '../lib/api';
 import { useState } from 'react';
 import { Calendar, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -27,8 +28,8 @@ export default function AdminBatchUpdatePage() {
     if (!startDate || !endDate || !newStatus) { setError(t.fillAllFields); return; }
     setUpdating(true); setError(null); setResult(null);
     try {
-      const response = await fetch('/api/admin/batch-update', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const response = await authenticatedFetch('/api/admin/batch-update', {
+        method: 'POST',
         body: JSON.stringify({ startDate, endDate, newStatus, dateColumn }),
       });
       const data = await response.json();

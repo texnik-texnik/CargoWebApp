@@ -61,7 +61,7 @@ export default function HomePage() {
   ];
 
   // Статистика только для админов
-  const isAdmin = user?.is_admin === true || user?.role === 'admin';
+  const isAdmin = user?.is_admin === true;
   if (isAdmin) {
     quickActions.unshift({ icon: TrendingUp, label: t.statistics, href: '/dashboard', color: 'text-orange-500', bgColor: 'bg-orange-500/10' });
   }

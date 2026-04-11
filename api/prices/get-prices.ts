@@ -1,15 +1,19 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { requireAdmin } from '../lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
+/**
+ * Публичный endpoint для получения цен.
+ * Не требует авторизации - используется на публичной странице цен.
+ */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const adminCheck = await requireAdmin(req, res);
-  if (!adminCheck) return;
-
-  const { supabase } = adminCheck;
-
   try {
+    const supabase = createClient(
+      process.env.REACT_APP_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     const { data, error } = await supabase
       .from('prices')
       .select('*')

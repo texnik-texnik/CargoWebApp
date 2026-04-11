@@ -22,7 +22,7 @@ export default function PricesPage() {
 
   async function loadPrices() {
     try {
-      const response = await fetch('/api/admin/get-prices');
+      const response = await fetch('/api/prices/get-prices');
       if (response.ok) {
         const data = await response.json();
         setPrices(data.prices || []);

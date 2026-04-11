@@ -1,4 +1,5 @@
 import { useAppLanguage } from '../hooks/useLanguage';
+import { authenticatedFetch } from '../lib/api';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit, Trash2, Save, X } from 'lucide-react';
@@ -34,7 +35,7 @@ export default function AdminPricesPage() {
   async function loadPrices() {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/get-prices');
+      const response = await authenticatedFetch('/api/admin/get-prices');
       if (response.ok) {
         const data = await response.json();
         setPrices(data.prices || []);
@@ -57,9 +58,8 @@ export default function AdminPricesPage() {
     }
 
     try {
-      const response = await fetch('/api/admin/update-price', {
+      const response = await authenticatedFetch('/api/admin/update-price', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id,
           weight_from: weightFrom,
@@ -85,9 +85,8 @@ export default function AdminPricesPage() {
   async function handleDelete(id: string) {
     if (!window.confirm('Delete this price?')) return;
     try {
-      const response = await fetch('/api/admin/delete-price', {
+      const response = await authenticatedFetch('/api/admin/delete-price', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
 
@@ -112,9 +111,8 @@ export default function AdminPricesPage() {
     }
 
     try {
-      const response = await fetch('/api/admin/update-price', {
+      const response = await authenticatedFetch('/api/admin/update-price', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           weight_from: weightFrom,
           weight_to: weightTo,

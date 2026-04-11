@@ -15,9 +15,13 @@ export interface Database {
           telegram_id: string
           client_id: string
           name: string
-          phone: string
+          username: string | null
+          phone: string | null
           lang: string
           history: string
+          is_admin: boolean
+          verification_code: string | null
+          verification_expires: string | null
           created_at: string
           updated_at: string
         }
@@ -26,9 +30,13 @@ export interface Database {
           telegram_id: string
           client_id?: string
           name: string
-          phone: string
+          username?: string | null
+          phone?: string | null
           lang?: string
           history?: string
+          is_admin?: boolean
+          verification_code?: string | null
+          verification_expires?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -37,9 +45,13 @@ export interface Database {
           telegram_id?: string
           client_id?: string
           name?: string
-          phone?: string
+          username?: string | null
+          phone?: string | null
           lang?: string
           history?: string
+          is_admin?: boolean
+          verification_code?: string | null
+          verification_expires?: string | null
           created_at?: string
           updated_at?: string
         }

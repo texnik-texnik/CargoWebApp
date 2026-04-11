@@ -1,4 +1,5 @@
 import { useAppLanguage } from '../hooks/useLanguage';
+import { authenticatedFetch } from '../lib/api';
 import { useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -27,7 +28,7 @@ export default function AdminImportPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const response = await fetch('/api/admin/import-csv', { method: 'POST', body: formData });
+      const response = await authenticatedFetch('/api/admin/import-csv', { method: 'POST', body: formData });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Upload error');
       setResult(data);

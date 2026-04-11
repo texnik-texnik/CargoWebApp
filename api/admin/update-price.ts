@@ -1,8 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { requireAdmin } from '../lib/auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const adminCheck = await requireAdmin(req, res);
+  if (!adminCheck) return;
+
+  const { supabase } = adminCheck;
 
   try {
     const { weight_from, weight_to, price, id } = req.body;
