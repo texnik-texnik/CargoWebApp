@@ -18,22 +18,7 @@
     }
   ],
   "functions": {
-    "api/telegram/webhook.ts": {
-      "runtime": "@vercel/node@5.3.6"
-    },
-    "api/auth/verify-code.ts": {
-      "runtime": "@vercel/node@5.3.6"
-    },
-    "api/auth/save-name.ts": {
-      "runtime": "@vercel/node@5.3.6"
-    },
-    "api/admin/import-csv.ts": {
-      "runtime": "@vercel/node@5.3.6"
-    },
-    "api/admin/batch-update.ts": {
-      "runtime": "@vercel/node@5.3.6"
-    },
-    "api/ai/chat.ts": {
+    "api/**/*.ts": {
       "runtime": "@vercel/node@5.3.6"
     }
   }
