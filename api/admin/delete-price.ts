@@ -13,11 +13,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { id } = req.body;
     if (!id) return res.status(400).json({ error: 'id required' });
 
-    const supabase = createClient(
-      process.env.REACT_APP_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     const { error } = await supabase
       .from('prices')
       .delete()

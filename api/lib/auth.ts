@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Проверяет, что пользователь является администратором.
@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function requireAdmin(
   req: VercelRequest,
   res: VercelResponse
-): Promise<{ supabase: ReturnType<typeof createClient>; user: any } | false> {
+): Promise<{ supabase: SupabaseClient; user: any } | false> {
   const supabase = createClient(
     process.env.REACT_APP_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!

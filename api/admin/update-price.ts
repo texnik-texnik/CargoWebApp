@@ -16,11 +16,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'weight_from and price required' });
     }
 
-    const supabase = createClient(
-      process.env.REACT_APP_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     if (id) {
       // Обновление существующей цены
       const { data, error } = await supabase

@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const unique = new Map();
     tracksToInsert.forEach((t: any) => { if (t) unique.set(t.code, t); });
 
-    const { data, error } = await supabase.from('tracks').upsert(Array.from(unique.values()), { onConflict: 'code' }).select();
+    const { data, error } = await (supabase as any).from('tracks').upsert(Array.from(unique.values()), { onConflict: 'code' }).select();
     if (error) return res.status(500).json({ error: error.message });
 
     const stats: Record<string, number> = {};
