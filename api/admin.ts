@@ -87,16 +87,89 @@ async function handleDeletePrice(req: VercelRequest, res: VercelResponse, supaba
 // POST /api/admin?action=import-csv
 async function handleImportCsv(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
   try {
-    let tracksToInsert: any[] = [];
-    if (Array.isArray(req.body)) {
-      tracksToInsert = req.body;
-    } else if (typeof req.body === 'string') {
-      const lines = req.body.trim().split('\n').slice(1);
-      tracksToInsert = lines.map((line: string) => {
-        const parts = line.split(',');
-        if (parts.length < 9) return null;
+    let csvContent: string = '';
+
+    // Read file from multipart/form-data or plain body
+    if (typeof req.body === 'string') {
+      csvContent = req.body;
+    } else if (req.headers['content-type']?.includes('multipart/form-data')) {
+      // Vercel doesn't parse multipart automatically, read raw body
+      const body = await new Promise<string>((resolve, reject) => {
+        let data = '';
+        req.on('data', (chunk: Buffer) => { data += chunk; });
+        req.on('end', () => resolve(data));
+        req.on('error', reject);
+      });
+      // Extract CSV from multipart - find the file content between boundaries
+      const boundary = req.headers['content-type']?.split('boundary=')[1];
+      if (boundary) {
+        const parts = body.split(`--${boundary}`);
+        for (const part of parts) {
+          if (part.includes('filename=')) {
+            const lines = part.split('\r\n');
+            const csvStart = lines.findIndex(l => l.trim() === '');
+            if (csvStart >= 0) {
+              csvContent = lines.slice(csvStart + 1).join('\r\n').trim();
+              // Remove trailing boundary if present
+              if (csvContent.endsWith('\r\n')) csvContent = csvContent.slice(0, -2);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    if (!csvContent.trim()) {
+      return res.status(400).json({ error: 'CSV file is empty or could not be read' });
+    }
+
+    const lines = csvContent.trim().split('\n');
+    const hasHeader = lines[0].includes('运单号') || lines[0].toLowerCase().includes('code') || lines[0].toLowerCase().includes('tracking');
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+
+    const tracksToInsert: any[] = [];
+
+    for (const line of dataLines) {
+      if (!line.trim()) continue;
+      const parts = line.split(',');
+
+      // Simple format: code,date,type (2-3 columns)
+      if (parts.length < 9 && parts.length >= 2) {
+        const code = parts[0].trim();
+        if (!code || code.length < 8) continue;
+
+        const dateStr = parts[1]?.trim() || null;
+        const typeStr = parts[2]?.trim() || '';
+
+        let status = 'received';
+        const type = typeStr.toLowerCase();
+        if (type.includes('авто') || type.includes('transport') || type.includes('intransit')) status = 'intransit';
+        else if (type.includes('border') || type.includes('границ')) status = 'border';
+        else if (type.includes('warehouse') || type.includes('склад')) status = 'warehouse';
+        else if (type.includes('delivered') || type.includes('достав')) status = 'delivered';
+        else if (type.includes('await') || type.includes('ожид')) status = 'waiting';
+
+        let notes = '';
+        if (typeStr) notes = typeStr;
+
+        tracksToInsert.push({
+          code,
+          status,
+          notes,
+          received_date: status === 'received' ? dateStr : null,
+          intransit_date: status === 'intransit' ? dateStr : null,
+          border_date: status === 'border' ? dateStr : null,
+          warehouse_date: status === 'warehouse' ? dateStr : null,
+          delivered_date: status === 'delivered' ? dateStr : null,
+        });
+        continue;
+      }
+
+      // Chinese format (9+ columns)
+      if (parts.length >= 9) {
         const [code, _co, _op, inDate, _inSt, inWeight, outDate, outStatus, outWeight] = parts;
-        if (!code || code.length < 10) return null;
+        if (!code || code.length < 10) continue;
+
         let status = 'waiting';
         const st = (outStatus || '').trim();
         if (st.includes('拍照') || st.includes('入库')) status = 'received';
@@ -105,16 +178,36 @@ async function handleImportCsv(req: VercelRequest, res: VercelResponse, supabase
         else if (st.includes('仓库')) status = 'warehouse';
         else if (st.includes('交付') || st.includes('签收')) status = 'delivered';
         else if (st.includes('付款')) status = 'payment';
+
         let cn = '';
-        if (code.startsWith('YT')) cn = '圆通'; else if (code.startsWith('SF')) cn = '顺丰'; else if (code.startsWith('JT')) cn = '极兔';
+        if (code.startsWith('YT')) cn = '圆通';
+        else if (code.startsWith('SF')) cn = '顺丰';
+        else if (code.startsWith('JT')) cn = '极兔';
+
         const w = (outWeight || inWeight || '').trim();
-        return { code: code.trim(), status, notes: [cn, w ? `Вес: ${w}` : ''].filter(Boolean).join(' | '), received_date: inDate?.trim() || null, intransit_date: outDate?.trim() || null, border_date: status === 'border' ? (outDate?.trim() || inDate?.trim() || null) : null, warehouse_date: status === 'warehouse' ? (outDate?.trim() || inDate?.trim() || null) : null, delivered_date: status === 'delivered' ? (outDate?.trim() || inDate?.trim() || null) : null };
-      }).filter(Boolean);
+        tracksToInsert.push({
+          code: code.trim(),
+          status,
+          notes: [cn, w ? `Вес: ${w}` : ''].filter(Boolean).join(' | '),
+          received_date: inDate?.trim() || null,
+          intransit_date: outDate?.trim() || null,
+          border_date: status === 'border' ? (outDate?.trim() || inDate?.trim() || null) : null,
+          warehouse_date: status === 'warehouse' ? (outDate?.trim() || inDate?.trim() || null) : null,
+          delivered_date: status === 'delivered' ? (outDate?.trim() || inDate?.trim() || null) : null,
+        });
+      }
     }
+
+    if (tracksToInsert.length === 0) {
+      return res.status(400).json({ error: 'No valid tracking codes found in CSV' });
+    }
+
     const unique = new Map();
     tracksToInsert.forEach((t: any) => { if (t) unique.set(t.code, t); });
+
     const { data, error } = await (supabase as any).from('tracks').upsert(Array.from(unique.values()), { onConflict: 'code' }).select();
     if (error) return res.status(500).json({ error: error.message });
+
     const stats: Record<string, number> = {};
     data.forEach((t: any) => { stats[t.status] = (stats[t.status] || 0) + 1; });
     res.status(200).json({ success: true, imported: data.length, stats });
