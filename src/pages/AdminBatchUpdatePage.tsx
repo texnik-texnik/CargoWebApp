@@ -28,7 +28,7 @@ export default function AdminBatchUpdatePage() {
     if (!startDate || !endDate || !newStatus) { setError(t.fillAllFields); return; }
     setUpdating(true); setError(null); setResult(null);
     try {
-      const response = await authenticatedFetch('/api/admin/batch-update', {
+      const response = await authenticatedFetch('/api/admin?action=batch-update', {
         method: 'POST',
         body: JSON.stringify({ startDate, endDate, newStatus, dateColumn }),
       });

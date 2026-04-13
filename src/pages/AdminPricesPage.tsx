@@ -35,7 +35,7 @@ export default function AdminPricesPage() {
   async function loadPrices() {
     setLoading(true);
     try {
-      const response = await authenticatedFetch('/api/admin/get-prices');
+      const response = await authenticatedFetch('/api/admin?action=get-prices');
       if (response.ok) {
         const data = await response.json();
         setPrices(data.prices || []);
@@ -58,7 +58,7 @@ export default function AdminPricesPage() {
     }
 
     try {
-      const response = await authenticatedFetch('/api/admin/update-price', {
+      const response = await authenticatedFetch('/api/admin?action=update-price', {
         method: 'POST',
         body: JSON.stringify({
           id,
@@ -85,7 +85,7 @@ export default function AdminPricesPage() {
   async function handleDelete(id: string) {
     if (!window.confirm('Delete this price?')) return;
     try {
-      const response = await authenticatedFetch('/api/admin/delete-price', {
+      const response = await authenticatedFetch('/api/admin?action=delete-price', {
         method: 'DELETE',
         body: JSON.stringify({ id }),
       });
@@ -111,7 +111,7 @@ export default function AdminPricesPage() {
     }
 
     try {
-      const response = await authenticatedFetch('/api/admin/update-price', {
+      const response = await authenticatedFetch('/api/admin?action=update-price', {
         method: 'POST',
         body: JSON.stringify({
           weight_from: weightFrom,
