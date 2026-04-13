@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import * as XLSX from 'xlsx';
 
 /**
  * Проверяет, что пользователь является администратором.
@@ -87,131 +88,260 @@ async function handleDeletePrice(req: VercelRequest, res: VercelResponse, supaba
 // POST /api/admin?action=import-csv
 async function handleImportCsv(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
   try {
-    let csvContent: string = '';
+    // Read raw body for multipart parsing
+    const rawBody = await new Promise<Buffer>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => resolve(Buffer.concat(chunks)));
+      req.on('error', reject);
+    });
 
-    // Read file from multipart/form-data or plain body
-    if (typeof req.body === 'string') {
-      csvContent = req.body;
-    } else if (req.headers['content-type']?.includes('multipart/form-data')) {
-      // Vercel doesn't parse multipart automatically, read raw body
-      const body = await new Promise<string>((resolve, reject) => {
-        let data = '';
-        req.on('data', (chunk: Buffer) => { data += chunk; });
-        req.on('end', () => resolve(data));
-        req.on('error', reject);
-      });
-      // Extract CSV from multipart - find the file content between boundaries
-      const boundary = req.headers['content-type']?.split('boundary=')[1];
-      if (boundary) {
-        const parts = body.split(`--${boundary}`);
-        for (const part of parts) {
-          if (part.includes('filename=')) {
-            const lines = part.split('\r\n');
-            const csvStart = lines.findIndex(l => l.trim() === '');
-            if (csvStart >= 0) {
-              csvContent = lines.slice(csvStart + 1).join('\r\n').trim();
-              // Remove trailing boundary if present
-              if (csvContent.endsWith('\r\n')) csvContent = csvContent.slice(0, -2);
-            }
-            break;
-          }
+    const contentType = req.headers['content-type'] || '';
+    const files: Array<{ name: string; content: string }> = [];
+
+    if (contentType.includes('multipart/form-data')) {
+      const boundaryMatch = contentType.match(/boundary=(.+)$/);
+      if (!boundaryMatch) return res.status(400).json({ error: 'Invalid multipart request' });
+      const boundary = '--' + boundaryMatch[1];
+      const body = rawBody.toString('utf-8');
+      const parts = body.split(boundary);
+
+      for (const part of parts) {
+        if (!part.includes('filename=')) continue;
+        const headerEnd = part.indexOf('\r\n\r\n');
+        if (headerEnd < 0) continue;
+        const headers = part.substring(0, headerEnd);
+        const content = part.substring(headerEnd + 4).trim();
+        // Remove trailing boundary artifacts
+        const cleanContent = content.replace(/\r?\n--$/, '').replace(/\r?\n--\r?\n$/, '').trim();
+
+        const filenameMatch = headers.match(/filename=["']?([^"';\r\n]+)["']?/);
+        if (!filenameMatch) continue;
+        const filename = filenameMatch[1];
+
+        if (filename.endsWith('.xlsx')) {
+          // Parse xlsx with SheetJS
+          const buf = Buffer.from(cleanContent, 'binary');
+          const workbook = XLSX.read(buf, { type: 'buffer' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+          files.push({ name: filename, content: parseXlsxRows(rows) });
+        } else {
+          // CSV
+          files.push({ name: filename, content: cleanContent });
         }
       }
+    } else if (typeof req.body === 'string') {
+      files.push({ name: 'body.csv', content: req.body });
     }
 
-    if (!csvContent.trim()) {
-      return res.status(400).json({ error: 'CSV file is empty or could not be read' });
+    if (files.length === 0) {
+      return res.status(400).json({ error: 'No files received' });
     }
 
-    const lines = csvContent.trim().split('\n');
-    const hasHeader = lines[0].includes('运单号') || lines[0].toLowerCase().includes('code') || lines[0].toLowerCase().includes('tracking');
-    const dataLines = hasHeader ? lines.slice(1) : lines;
+    // Process all files
+    let totalImported = 0;
+    const allStats: Record<string, number> = {};
+    const fileResults: Array<{ name: string; imported: number; stats: Record<string, number> }> = [];
 
-    const tracksToInsert: any[] = [];
+    for (const file of files) {
+      const tracksToInsert = parseCsvContent(file.content);
 
-    for (const line of dataLines) {
-      if (!line.trim()) continue;
-      const parts = line.split(',');
-
-      // Simple format: code,date,type (2-3 columns)
-      if (parts.length < 9 && parts.length >= 2) {
-        const code = parts[0].trim();
-        if (!code || code.length < 8) continue;
-
-        const dateStr = parts[1]?.trim() || null;
-        const typeStr = parts[2]?.trim() || '';
-
-        let status = 'received';
-        const type = typeStr.toLowerCase();
-        if (type.includes('авто') || type.includes('transport') || type.includes('intransit')) status = 'intransit';
-        else if (type.includes('border') || type.includes('границ')) status = 'border';
-        else if (type.includes('warehouse') || type.includes('склад')) status = 'warehouse';
-        else if (type.includes('delivered') || type.includes('достав')) status = 'delivered';
-        else if (type.includes('await') || type.includes('ожид')) status = 'waiting';
-
-        let notes = '';
-        if (typeStr) notes = typeStr;
-
-        tracksToInsert.push({
-          code,
-          status,
-          notes,
-          received_date: status === 'received' ? dateStr : null,
-          intransit_date: status === 'intransit' ? dateStr : null,
-          border_date: status === 'border' ? dateStr : null,
-          warehouse_date: status === 'warehouse' ? dateStr : null,
-          delivered_date: status === 'delivered' ? dateStr : null,
-        });
+      if (tracksToInsert.length === 0) {
+        fileResults.push({ name: file.name, imported: 0, stats: {} });
         continue;
       }
 
-      // Chinese format (9+ columns)
-      if (parts.length >= 9) {
-        const [code, _co, _op, inDate, _inSt, inWeight, outDate, outStatus, outWeight] = parts;
-        if (!code || code.length < 10) continue;
+      const unique = new Map();
+      tracksToInsert.forEach((t: any) => { if (t) unique.set(t.code, t); });
 
-        let status = 'waiting';
-        const st = (outStatus || '').trim();
-        if (st.includes('拍照') || st.includes('入库')) status = 'received';
-        else if (st.includes('出库') || st.includes('运输')) status = 'intransit';
-        else if (st.includes('边境')) status = 'border';
-        else if (st.includes('仓库')) status = 'warehouse';
-        else if (st.includes('交付') || st.includes('签收')) status = 'delivered';
-        else if (st.includes('付款')) status = 'payment';
+      const { data, error } = await (supabase as any).from('tracks').upsert(Array.from(unique.values()), { onConflict: 'code' }).select();
+      if (error) return res.status(500).json({ error: error.message, file: file.name });
 
-        let cn = '';
-        if (code.startsWith('YT')) cn = '圆通';
-        else if (code.startsWith('SF')) cn = '顺丰';
-        else if (code.startsWith('JT')) cn = '极兔';
+      const stats: Record<string, number> = {};
+      data.forEach((t: any) => { stats[t.status] = (stats[t.status] || 0) + 1; });
 
-        const w = (outWeight || inWeight || '').trim();
-        tracksToInsert.push({
-          code: code.trim(),
-          status,
-          notes: [cn, w ? `Вес: ${w}` : ''].filter(Boolean).join(' | '),
-          received_date: inDate?.trim() || null,
-          intransit_date: outDate?.trim() || null,
-          border_date: status === 'border' ? (outDate?.trim() || inDate?.trim() || null) : null,
-          warehouse_date: status === 'warehouse' ? (outDate?.trim() || inDate?.trim() || null) : null,
-          delivered_date: status === 'delivered' ? (outDate?.trim() || inDate?.trim() || null) : null,
-        });
+      totalImported += data.length;
+      Object.entries(stats).forEach(([k, v]) => { allStats[k] = (allStats[k] || 0) + v; });
+      fileResults.push({ name: file.name, imported: data.length, stats });
+    }
+
+    res.status(200).json({ success: true, imported: totalImported, stats: allStats, files: fileResults });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+}
+
+/**
+ * Парсит строки из xlsx (первая строка может быть заголовком или данными).
+ * Возвращает CSV-строку в китайском формате.
+ */
+function parseXlsxRows(rows: any[][]): string {
+  const lines: string[] = [];
+  // Добавляем китайский заголовок
+  lines.push('运单号,快递公司,操作人,入库时间,入库状态,入库重量,出库时间,出库状态,出库重量');
+
+  for (const row of rows) {
+    if (!row || row.length === 0) continue;
+    // Проверяем это заголовок или данные
+    const firstCell = String(row[0] || '').trim();
+    if (firstCell.includes('运单号') || firstCell.toLowerCase().includes('tracking') || firstCell.toLowerCase().includes('code')) {
+      continue; // пропускаем заголовок
+    }
+
+    // Извлекаем код и дату_тип из строки
+    let code: string | null = null;
+    let dateType: string | null = null;
+
+    for (const cell of row) {
+      if (cell === null || cell === undefined) continue;
+      const val = String(cell).trim();
+      if (!code && val.length >= 8 && /^[A-Za-z0-9]{8,}$/.test(val)) {
+        code = val;
+      } else if (!dateType && (/\d{2}\.\d{2}\.\d{4}/.test(val) || /авто|transport|warehouse|border|достав/i.test(val))) {
+        dateType = val;
       }
     }
 
-    if (tracksToInsert.length === 0) {
-      return res.status(400).json({ error: 'No valid tracking codes found in CSV' });
+    if (!code) continue;
+    lines.push(buildChineseRow(code, dateType));
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Строит одну строку в китайском формате.
+ */
+function buildChineseRow(code: string, dateType: string | null): string {
+  const parsed = parseDateType(dateType);
+  const formattedDate = convertDateFormat(parsed.dateStr);
+  const courier = detectCourier(code);
+
+  let inDate = formattedDate || '';
+  let outDate = '';
+  let inStatus = parsed.chineseStatus;
+  let outStatus = '';
+
+  if (parsed.chineseStatus === '已出库' || parsed.chineseStatus === '边境' || parsed.chineseStatus === '仓库' || parsed.chineseStatus === '已签收') {
+    outDate = formattedDate || '';
+    inStatus = '已入库';
+    outStatus = parsed.chineseStatus;
+  }
+
+  return `${code},${courier},,${inDate},${inStatus},,${outDate},${outStatus},`;
+}
+
+/**
+ * Парсит '13.03.2026 авто' -> { dateStr, typeStr, chineseStatus }.
+ */
+function parseDateType(value: string | null): { dateStr: string | null; typeStr: string; chineseStatus: string } {
+  if (!value) return { dateStr: null, typeStr: '', chineseStatus: '待入库' };
+
+  const dateMatch = value.match(/^(\d{2}\.\d{2}\.\d{4})\s*(.*)/);
+  const dateStr = dateMatch ? dateMatch[1] : null;
+  const typeStr = dateMatch ? dateMatch[2].trim() : value;
+  const typeLower = typeStr.toLowerCase();
+
+  let chineseStatus = '待入库';
+  if (/авто|transport|intransit/.test(typeLower)) chineseStatus = '已出库';
+  else if (/border|границ/.test(typeLower)) chineseStatus = '边境';
+  else if (/warehouse|склад/.test(typeLower)) chineseStatus = '仓库';
+  else if (/delivered|достав|签收/.test(typeLower)) chineseStatus = '已签收';
+  else if (/await|ожид/.test(typeLower)) chineseStatus = '待入库';
+  else if (/received|получ|入库/.test(typeLower)) chineseStatus = '已入库';
+
+  return { dateStr, typeStr, chineseStatus };
+}
+
+function convertDateFormat(dateStr: string | null): string | null {
+  if (!dateStr) return null;
+  const match = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!match) return dateStr;
+  return `${match[3]}-${match[2]}-${match[1]} 12:00:00`;
+}
+
+function detectCourier(code: string): string {
+  const upper = code.toUpperCase();
+  if (upper.startsWith('YT')) return '圆通';
+  if (upper.startsWith('SF')) return '顺丰';
+  if (upper.startsWith('JT')) return '极兔';
+  return '快递';
+}
+
+/**
+ * Парсит CSV контент (поддерживает оба формата).
+ */
+function parseCsvContent(content: string): any[] {
+  const csvLines = content.trim().split('\n');
+  const hasHeader = csvLines[0].includes('运单号') || csvLines[0].toLowerCase().includes('code');
+  const dataLines = hasHeader ? csvLines.slice(1) : csvLines;
+  const tracks: any[] = [];
+
+  for (const line of dataLines) {
+    if (!line.trim()) continue;
+    const parts = line.split(',');
+
+    // Simple format: code,date,type (2-3 columns)
+    if (parts.length < 9 && parts.length >= 2) {
+      const code = parts[0].trim();
+      if (!code || code.length < 8) continue;
+      const parsed = parseDateType(parts[1]?.trim() || null);
+      tracks.push({
+        code,
+        status: mapChineseToEnglish(parsed.chineseStatus),
+        notes: parsed.typeStr,
+        received_date: mapChineseToEnglish(parsed.chineseStatus) === 'received' ? convertDateFormat(parsed.dateStr) : null,
+        intransit_date: mapChineseToEnglish(parsed.chineseStatus) === 'intransit' ? convertDateFormat(parsed.dateStr) : null,
+        border_date: mapChineseToEnglish(parsed.chineseStatus) === 'border' ? convertDateFormat(parsed.dateStr) : null,
+        warehouse_date: mapChineseToEnglish(parsed.chineseStatus) === 'warehouse' ? convertDateFormat(parsed.dateStr) : null,
+        delivered_date: mapChineseToEnglish(parsed.chineseStatus) === 'delivered' ? convertDateFormat(parsed.dateStr) : null,
+      });
+      continue;
     }
 
-    const unique = new Map();
-    tracksToInsert.forEach((t: any) => { if (t) unique.set(t.code, t); });
+    // Chinese format (9+ columns)
+    if (parts.length >= 9) {
+      const [code, , , inDate, , , outDate, outStatus] = parts;
+      if (!code || code.trim().length < 10) continue;
 
-    const { data, error } = await (supabase as any).from('tracks').upsert(Array.from(unique.values()), { onConflict: 'code' }).select();
-    if (error) return res.status(500).json({ error: error.message });
+      let status = 'waiting';
+      const st = (outStatus || '').trim();
+      if (st.includes('拍照') || st.includes('入库')) status = 'received';
+      else if (st.includes('出库') || st.includes('运输')) status = 'intransit';
+      else if (st.includes('边境')) status = 'border';
+      else if (st.includes('仓库')) status = 'warehouse';
+      else if (st.includes('交付') || st.includes('签收')) status = 'delivered';
+      else if (st.includes('付款')) status = 'payment';
 
-    const stats: Record<string, number> = {};
-    data.forEach((t: any) => { stats[t.status] = (stats[t.status] || 0) + 1; });
-    res.status(200).json({ success: true, imported: data.length, stats });
-  } catch (e: any) { res.status(500).json({ error: e.message }); }
+      let cn = '';
+      const courier = (parts[1] || '').trim();
+      if (code.startsWith('YT')) cn = '圆通'; else if (code.startsWith('SF')) cn = '顺丰'; else if (code.startsWith('JT')) cn = '极兔';
+      cn = cn || courier;
+
+      tracks.push({
+        code: code.trim(),
+        status,
+        notes: cn,
+        received_date: inDate?.trim() || null,
+        intransit_date: outDate?.trim() || null,
+        border_date: status === 'border' ? (outDate?.trim() || inDate?.trim() || null) : null,
+        warehouse_date: status === 'warehouse' ? (outDate?.trim() || inDate?.trim() || null) : null,
+        delivered_date: status === 'delivered' ? (outDate?.trim() || inDate?.trim() || null) : null,
+      });
+    }
+  }
+  return tracks;
+}
+
+function mapChineseToEnglish(chineseStatus: string): string {
+  switch (chineseStatus) {
+    case '已入库': return 'received';
+    case '已出库': return 'intransit';
+    case '边境': return 'border';
+    case '仓库': return 'warehouse';
+    case '已签收': return 'delivered';
+    case '待入库': return 'waiting';
+    default: return 'waiting';
+  }
 }
 
 // POST /api/admin?action=batch-update
