@@ -351,12 +351,14 @@ async function handleGetTracks(req: VercelRequest, res: VercelResponse, supabase
     const limit = parseInt(req.query.limit as string) || 50;
     const status = req.query.status as string;
     const search = req.query.search as string;
+    const archived = req.query.archived === 'true';
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
     let query = (supabase as any)
       .from('tracks')
       .select('*', { count: 'exact' })
+      .eq('archived', archived)
       .order('intransit_date', { ascending: false, nullsFirst: false });
 
     if (status) {
@@ -376,6 +378,104 @@ async function handleGetTracks(req: VercelRequest, res: VercelResponse, supabase
       page,
       limit,
       totalPages: Math.ceil((count || 0) / limit),
+    });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+// POST /api/admin?action=archive-old-tracks
+async function handleArchiveOldTracks(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const { months = 4 } = req.body;
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - parseInt(months));
+
+    // Find tracks older than cutoff date
+    const { data: oldTracks, error: fetchError } = await (supabase as any)
+      .from('tracks')
+      .select('id, code, intransit_date')
+      .eq('archived', false)
+      .not('intransit_date', 'is', null)
+      .lt('intransit_date', cutoffDate.toISOString());
+
+    if (fetchError) return res.status(500).json({ error: fetchError.message });
+    if (!oldTracks?.length) {
+      return res.status(200).json({ success: true, archived: 0, message: 'No tracks to archive' });
+    }
+
+    // Archive them
+    const codes = oldTracks.map((t: any) => t.code);
+    const { data, error } = await (supabase as any)
+      .from('tracks')
+      .update({ archived: true, archived_at: new Date().toISOString() })
+      .in('code', codes)
+      .select();
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    return res.status(200).json({
+      success: true,
+      archived: data.length,
+      codes: data.map((t: any) => t.code),
+      cutoffDate: cutoffDate.toISOString(),
+    });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+// POST /api/admin?action=unarchive-track
+async function handleUnarchiveTrack(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'code required' });
+
+    const { data, error } = await (supabase as any)
+      .from('tracks')
+      .update({ archived: false, archived_at: null })
+      .eq('code', code)
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true, track: data });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+// GET /api/admin?action=archive-stats
+async function handleArchiveStats(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const { data: active, error: activeError } = await (supabase as any)
+      .from('tracks')
+      .select('id', { count: 'exact' })
+      .eq('archived', false);
+
+    const { data: archived, error: archivedError } = await (supabase as any)
+      .from('tracks')
+      .select('id', { count: 'exact' })
+      .eq('archived', true);
+
+    if (activeError || archivedError) return res.status(500).json({ error: activeError?.message || archivedError?.message });
+
+    // Count by status for active tracks
+    const { data: activeByStatus } = await (supabase as any)
+      .from('tracks')
+      .select('status')
+      .eq('archived', false);
+
+    const statusCounts: Record<string, number> = {};
+    (activeByStatus || []).forEach((t: any) => {
+      statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
+    });
+
+    return res.status(200).json({
+      success: true,
+      activeCount: (active || []).length,
+      archivedCount: (archived || []).length,
+      activeByStatus: statusCounts,
     });
   } catch (e: any) {
     return res.status(500).json({ error: e.message });
@@ -422,7 +522,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return handleBatchUpdate(req, res, supabase);
     case 'get-tracks':
       return handleGetTracks(req, res, supabase);
+    case 'archive-old-tracks':
+      return handleArchiveOldTracks(req, res, supabase);
+    case 'unarchive-track':
+      return handleUnarchiveTrack(req, res, supabase);
+    case 'archive-stats':
+      return handleArchiveStats(req, res, supabase);
     default:
-      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update, get-tracks' });
+      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update, get-tracks, archive-old-tracks, unarchive-track, archive-stats' });
   }
 }

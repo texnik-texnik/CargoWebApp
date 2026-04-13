@@ -99,7 +99,7 @@ export default function ProfilePage() {
     try {
       const codes = history.split(',').filter(Boolean);
       if (codes.length === 0) return;
-      const { data } = await supabase.from('tracks').select('*').in('code', codes.slice(0, 10));
+      const { data } = await supabase.from('tracks').select('*').eq('archived', false).in('code', codes.slice(0, 10));
       if (data) setMyTracks(data);
     } catch (err) {
       // Error loading tracks

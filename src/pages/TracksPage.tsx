@@ -80,7 +80,7 @@ export default function TracksPage() {
     if (!code.trim()) return;
     setLoading(true); setError(null);
     try {
-      const { data, error } = await supabase.from('tracks').select('*').ilike('code', `%${code}%`);
+      const { data, error } = await supabase.from('tracks').select('*').eq('archived', false).ilike('code', `%${code}%`);
       if (error) throw error;
       setSearchResults(data || []);
       setSearchCode(code);

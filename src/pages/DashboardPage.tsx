@@ -19,7 +19,7 @@ export default function DashboardPage() {
   async function loadStats() {
     try {
       const [tracksRes, usersRes] = await Promise.all([
-        supabase.from('tracks').select('id, status'),
+        supabase.from('tracks').select('id, status').eq('archived', false),
         supabase.from('users').select('id'),
       ]);
       const tracks = tracksRes.data || [];
@@ -42,7 +42,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         {[
           { title: t.totalTracks, value: stats.totalTracks, icon: Package, color: 'text-blue-500' },
-          { title: t.activeTracks, value: stats.activeTracks, icon: TrendingUp, color: 'text-orange-500' },
+          { title: t.inTransit, value: stats.activeTracks, icon: TrendingUp, color: 'text-orange-500' },
           { title: t.deliveredCount, value: stats.deliveredTracks, icon: AlertCircle, color: 'text-green-500' },
           { title: t.totalUsers, value: stats.totalUsers, icon: Users, color: 'text-purple-500' },
         ].map((stat) => (

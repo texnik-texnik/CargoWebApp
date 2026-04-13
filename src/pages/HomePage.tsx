@@ -40,6 +40,7 @@ export default function HomePage() {
         if (historyCodes.length > 0) {
           const { data: tracks } = await supabase
             .from('tracks').select('*')
+            .eq('archived', false)
             .in('code', historyCodes.slice(0, 5))
             .order('updated_at', { ascending: false });
           setRecentTracks(tracks || []);

@@ -1,6 +1,6 @@
 import { useAppLanguage } from '../hooks/useLanguage';
 import { Link } from 'react-router-dom';
-import { Upload, Database, Users, Bell, Calendar, DollarSign, ChevronRight } from 'lucide-react';
+import { Upload, Database, Users, Bell, Calendar, DollarSign, ChevronRight, Archive } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 
 export default function AdminPage() {
@@ -10,6 +10,7 @@ export default function AdminPage() {
     { title: t.csvImport, desc: t.csvImportDesc, icon: Upload, href: '/admin/import', color: 'text-blue-500' },
     { title: t.batchUpdate, desc: t.batchUpdateDesc, icon: Calendar, href: '/admin/batch-update', color: 'text-orange-500' },
     { title: t.database, desc: t.databaseDesc, icon: Database, href: '/admin/database', color: 'text-green-500' },
+    { title: t.archive, desc: t.archiveMenuDesc, icon: Archive, href: '/admin/archive', color: 'text-gray-500' },
     { title: t.users, desc: t.usersDesc, icon: Users, href: '#', color: 'text-purple-500' },
     { title: t.broadcast, desc: t.broadcastDesc, icon: Bell, href: '#', color: 'text-red-500' },
   ];
