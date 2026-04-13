@@ -22,7 +22,7 @@ export default function AdminBatchUpdatePage() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const columnLabels: Record<string, string> = { intransit_date: t.dispatchTime, received_date: t.receivingTime, border_date: t.borderDate, warehouse_date: t.warehouseDate, delivered_date: t.deliveryDate };
+  const columnLabels: Record<string, string> = { intransit_date: t.dispatchTime, received_date: t.receivingTime, border_date: t.borderDate, warehouse_date: t.warehouseDate, delivered_date: t.deliveredDate };
 
   const handleBatchUpdate = async () => {
     if (!startDate || !endDate || !newStatus) { setError(t.fillAllFields); return; }

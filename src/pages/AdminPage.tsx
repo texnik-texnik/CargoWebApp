@@ -9,7 +9,7 @@ export default function AdminPage() {
     { title: t.managePrices, desc: t.managePricesDesc, icon: DollarSign, href: '/admin/prices', color: 'text-green-500' },
     { title: t.csvImport, desc: t.csvImportDesc, icon: Upload, href: '/admin/import', color: 'text-blue-500' },
     { title: t.batchUpdate, desc: t.batchUpdateDesc, icon: Calendar, href: '/admin/batch-update', color: 'text-orange-500' },
-    { title: t.database, desc: t.databaseDesc, icon: Database, href: '#', color: 'text-green-500' },
+    { title: t.database, desc: t.databaseDesc, icon: Database, href: '/admin/database', color: 'text-green-500' },
     { title: t.users, desc: t.usersDesc, icon: Users, href: '#', color: 'text-purple-500' },
     { title: t.broadcast, desc: t.broadcastDesc, icon: Bell, href: '#', color: 'text-red-500' },
   ];

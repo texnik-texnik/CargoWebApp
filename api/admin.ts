@@ -344,6 +344,44 @@ function mapChineseToEnglish(chineseStatus: string): string {
   }
 }
 
+// GET /api/admin?action=get-tracks&page=1&limit=50
+async function handleGetTracks(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const status = req.query.status as string;
+    const search = req.query.search as string;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    let query = (supabase as any)
+      .from('tracks')
+      .select('*', { count: 'exact' })
+      .order('intransit_date', { ascending: false, nullsFirst: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+    if (search) {
+      query = query.ilike('code', `%${search}%`);
+    }
+
+    const { data, error, count } = await query.range(from, to);
+    if (error) return res.status(500).json({ error: error.message });
+
+    return res.status(200).json({
+      success: true,
+      tracks: data || [],
+      total: count || 0,
+      page,
+      limit,
+      totalPages: Math.ceil((count || 0) / limit),
+    });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
 // POST /api/admin?action=batch-update
 async function handleBatchUpdate(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
   try {
@@ -382,7 +420,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return handleImportCsv(req, res, supabase);
     case 'batch-update':
       return handleBatchUpdate(req, res, supabase);
+    case 'get-tracks':
+      return handleGetTracks(req, res, supabase);
     default:
-      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update' });
+      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update, get-tracks' });
   }
 }

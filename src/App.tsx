@@ -12,6 +12,7 @@ import AddressesPage from './pages/AddressesPage';
 import AdminPage from './pages/AdminPage';
 import AdminImportPage from './pages/AdminImportPage';
 import AdminBatchUpdatePage from './pages/AdminBatchUpdatePage';
+import AdminDatabasePage from './pages/AdminDatabasePage';
 import AdminPricesPage from './pages/AdminPricesPage';
 import AIChatPage from './pages/AIChatPage';
 import TermsPage from './pages/TermsPage';
@@ -34,6 +35,7 @@ function App() {
         <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/import" element={<AdminRoute><AdminImportPage /></AdminRoute>} />
         <Route path="/admin/batch-update" element={<AdminRoute><AdminBatchUpdatePage /></AdminRoute>} />
+        <Route path="/admin/database" element={<AdminRoute><AdminDatabasePage /></AdminRoute>} />
         <Route path="/admin/prices" element={<AdminRoute><AdminPricesPage /></AdminRoute>} />
         <Route path="/ai-chat" element={<AIChatPage />} />
       </Routes>
