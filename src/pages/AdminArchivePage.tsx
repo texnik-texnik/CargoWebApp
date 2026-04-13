@@ -8,7 +8,6 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 const statusLabels: Record<string, string> = {
   waiting: 'Ожидание', received: 'Получен', intransit: 'В пути',
@@ -83,6 +82,7 @@ export default function AdminArchivePage() {
 
   useEffect(() => {
     loadArchived();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const handleArchiveOld = async () => {
