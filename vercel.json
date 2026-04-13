@@ -5,7 +5,19 @@
   "installCommand": "npm install",
   "framework": "create-react-app",
   "functions": {
-    "api/**/*.ts": {
+    "api/ai/*.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/auth/*.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/admin/*.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/prices/*.ts": {
+      "runtime": "@vercel/node@5.3.6"
+    },
+    "api/telegram/*.ts": {
       "runtime": "@vercel/node@5.3.6"
     }
   },
