@@ -385,34 +385,35 @@ async function handleGetTracks(req: VercelRequest, res: VercelResponse, supabase
 }
 
 // POST /api/admin?action=archive-old-tracks
+// Archives only delivered tracks older than the cutoff date.
+// Non-delivered tracks (waiting, received, intransit, etc.) are NOT archived
+// to prevent hiding unresolved shipments from users.
 async function handleArchiveOldTracks(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
   try {
     const { months = 4 } = req.body;
-    const cutoffDate = new Date();
-    cutoffDate.setMonth(cutoffDate.getMonth() - parseInt(months));
-
-    // Find tracks older than cutoff date
-    const { data: oldTracks, error: fetchError } = await (supabase as any)
-      .from('tracks')
-      .select('id, code, intransit_date')
-      .eq('archived', false)
-      .not('intransit_date', 'is', null)
-      .lt('intransit_date', cutoffDate.toISOString());
-
-    if (fetchError) return res.status(500).json({ error: fetchError.message });
-    if (!oldTracks?.length) {
-      return res.status(200).json({ success: true, archived: 0, message: 'No tracks to archive' });
+    const monthsNum = parseInt(months);
+    if (isNaN(monthsNum) || monthsNum < 1 || monthsNum > 24) {
+      return res.status(400).json({ error: 'months must be between 1 and 24' });
     }
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - monthsNum);
+    // Use consistent date format matching DB storage (YYYY-MM-DD HH:MM:SS)
+    const cutoffStr = cutoffDate.toISOString().split('T')[0] + ' 00:00:00';
 
-    // Archive them
-    const codes = oldTracks.map((t: any) => t.code);
+    // Single atomic UPDATE — only archive DELIVERED tracks to avoid hiding unresolved shipments
     const { data, error } = await (supabase as any)
       .from('tracks')
       .update({ archived: true, archived_at: new Date().toISOString() })
-      .in('code', codes)
-      .select();
+      .eq('archived', false)
+      .eq('status', 'delivered')
+      .not('intransit_date', 'is', null)
+      .lt('intransit_date', cutoffStr)
+      .select('code');
 
     if (error) return res.status(500).json({ error: error.message });
+    if (!data?.length) {
+      return res.status(200).json({ success: true, archived: 0, message: 'No tracks to archive' });
+    }
 
     return res.status(200).json({
       success: true,
@@ -448,34 +449,23 @@ async function handleUnarchiveTrack(req: VercelRequest, res: VercelResponse, sup
 // GET /api/admin?action=archive-stats
 async function handleArchiveStats(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
   try {
-    const { data: active, error: activeError } = await (supabase as any)
+    // Use count from query result, not array length — more reliable on error edge cases
+    const { data: active, error: activeError, count: activeCount } = await (supabase as any)
       .from('tracks')
       .select('id', { count: 'exact' })
       .eq('archived', false);
 
-    const { data: archived, error: archivedError } = await (supabase as any)
+    const { data: archived, error: archivedError, count: archivedCount } = await (supabase as any)
       .from('tracks')
       .select('id', { count: 'exact' })
       .eq('archived', true);
 
     if (activeError || archivedError) return res.status(500).json({ error: activeError?.message || archivedError?.message });
 
-    // Count by status for active tracks
-    const { data: activeByStatus } = await (supabase as any)
-      .from('tracks')
-      .select('status')
-      .eq('archived', false);
-
-    const statusCounts: Record<string, number> = {};
-    (activeByStatus || []).forEach((t: any) => {
-      statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
-    });
-
     return res.status(200).json({
       success: true,
-      activeCount: (active || []).length,
-      archivedCount: (archived || []).length,
-      activeByStatus: statusCounts,
+      activeCount: activeCount || 0,
+      archivedCount: archivedCount || 0,
     });
   } catch (e: any) {
     return res.status(500).json({ error: e.message });
@@ -488,7 +478,8 @@ async function handleBatchUpdate(req: VercelRequest, res: VercelResponse, supaba
     const { startDate, endDate, newStatus, dateColumn = 'intransit_date' } = req.body;
     if (!startDate || !endDate || !newStatus) return res.status(400).json({ error: 'Укажите даты и статус' });
     const dateColMap: Record<string, string> = { received: 'received_date', intransit: 'intransit_date', border: 'border_date', warehouse: 'warehouse_date', delivered: 'delivered_date' };
-    const { data: tracks, error: fetchError } = await (supabase as any).from('tracks').select('code').gte(dateColumn, `${startDate} 00:00:00+00`).lte(dateColumn, `${endDate} 23:59:59+00`).not(dateColumn, 'is', null);
+    // Only update non-archived tracks to prevent data integrity issues
+    const { data: tracks, error: fetchError } = await (supabase as any).from('tracks').select('code').eq('archived', false).gte(dateColumn, `${startDate} 00:00:00+00`).lte(dateColumn, `${endDate} 23:59:59+00`).not(dateColumn, 'is', null);
     if (fetchError) return res.status(500).json({ error: fetchError.message });
     if (!tracks?.length) return res.status(404).json({ error: 'Треки не найдены' });
     const updateData: any = { status: newStatus };

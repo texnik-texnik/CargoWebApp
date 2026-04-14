@@ -18,17 +18,19 @@ export default function DashboardPage() {
 
   async function loadStats() {
     try {
-      const [tracksRes, usersRes] = await Promise.all([
-        supabase.from('tracks').select('id, status').eq('archived', false),
-        supabase.from('users').select('id'),
+      // Use count queries instead of fetching all rows — critical for scalability
+      const [tracksRes, deliveredRes, usersRes] = await Promise.all([
+        supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('archived', false),
+        supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('archived', false).eq('status', 'delivered'),
+        supabase.from('users').select('*', { count: 'exact', head: true }),
       ]);
-      const tracks = tracksRes.data || [];
-      const users = usersRes.data || [];
+      const totalTracks = tracksRes.count || 0;
+      const deliveredTracks = deliveredRes.count || 0;
       setStats({
-        totalTracks: tracks.length,
-        activeTracks: tracks.filter(t => !['delivered'].includes(t.status)).length,
-        deliveredTracks: tracks.filter(t => t.status === 'delivered').length,
-        totalUsers: users.length,
+        totalTracks,
+        activeTracks: totalTracks - deliveredTracks,
+        deliveredTracks,
+        totalUsers: usersRes.count || 0,
       });
     } catch (error) { console.error('Error loading stats:', error); }
     finally { setLoading(false); }

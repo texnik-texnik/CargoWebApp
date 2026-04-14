@@ -86,6 +86,9 @@ export default function AdminArchivePage() {
   }, [page]);
 
   const handleArchiveOld = async () => {
+    // Confirmation dialog to prevent accidental mass archiving
+    if (!window.confirm('Архивировать все ДОСТАВЛЕННЫЕ треки старше 4 месяцев? Это действие можно отменить.')) return;
+
     setArchiving(true); setError(null); setResult(null);
     try {
       const response = await authenticatedFetch('/api/admin?action=archive-old-tracks', {

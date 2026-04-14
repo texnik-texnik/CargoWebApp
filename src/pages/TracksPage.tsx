@@ -80,11 +80,17 @@ export default function TracksPage() {
     if (!code.trim()) return;
     setLoading(true); setError(null);
     try {
-      const { data, error } = await supabase.from('tracks').select('*').eq('archived', false).ilike('code', `%${code}%`);
+      // Limit results to 20 and select only needed columns — prevents loading hundreds of rows
+      const { data, error } = await supabase
+        .from('tracks')
+        .select('id, code, status, notes, updated_at')
+        .eq('archived', false)
+        .ilike('code', `%${code}%`)
+        .limit(20);
       if (error) throw error;
       setSearchResults(data || []);
       setSearchCode(code);
-      
+
       // Всегда сохраняем трек в историю
       await saveTrackToHistory(code);
     } catch (err: any) { setError(err.message || 'Search error'); }

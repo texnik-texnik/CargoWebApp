@@ -4,6 +4,9 @@
 -- Add archived column (default false)
 ALTER TABLE tracks ADD COLUMN IF NOT EXISTS archived BOOLEAN DEFAULT FALSE;
 
+-- CRITICAL: Set archived = FALSE for all existing rows (DEFAULT only applies to new INSERTs)
+UPDATE tracks SET archived = FALSE WHERE archived IS NULL;
+
 -- Add archived_at timestamp to track when it was archived
 ALTER TABLE tracks ADD COLUMN IF NOT EXISTS archived_at TIMESTAMP WITH TIME ZONE;
 
