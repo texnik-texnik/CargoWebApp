@@ -1,6 +1,6 @@
 import { useAppLanguage } from '../hooks/useLanguage';
 import { authenticatedFetch } from '../lib/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Archive, RotateCcw, Database, Search, Loader2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -80,10 +80,26 @@ export default function AdminArchivePage() {
     loadStats();
   }, []);
 
+  // Debounced search — prevents excessive API calls while typing
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Clear previous timer
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    // Debounce: wait 300ms after last search input change
+    searchTimerRef.current = setTimeout(() => {
+      setPage(1); // Reset to page 1 when search changes
+    }, 300);
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [search]);
+
   useEffect(() => {
     loadArchived();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, search]);
 
   const handleArchiveOld = async () => {
     // Confirmation dialog to prevent accidental mass archiving
@@ -124,10 +140,8 @@ export default function AdminArchivePage() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    loadArchived();
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -222,18 +236,13 @@ export default function AdminArchivePage() {
           <CardDescription>{archivedTracks.length} треков в архиве</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Search */}
-          <form onSubmit={handleSearch} className="mb-4">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t.searchArchive} className="pl-10" />
-              </div>
-              <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t.search}
-              </Button>
+          {/* Search with debounce */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input value={search} onChange={handleSearchChange} placeholder={t.searchArchive} className="pl-10" />
             </div>
-          </form>
+          </div>
 
           {loading ? (
             <div className="flex items-center justify-center py-12">

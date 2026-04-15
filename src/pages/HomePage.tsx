@@ -34,12 +34,13 @@ export default function HomePage() {
   async function loadUserData(phone: string) {
     if (!phone) return;
     try {
-      const { data } = await supabase.from('users').select('*').eq('phone', phone).single();
+      const { data } = await supabase.from('users').select('id, history').eq('phone', phone).single();
       if (data?.history) {
         const historyCodes = data.history.split(',').filter(Boolean);
         if (historyCodes.length > 0) {
+          // Select only columns needed for recent tracks display — reduces bandwidth
           const { data: tracks } = await supabase
-            .from('tracks').select('*')
+            .from('tracks').select('id, code, status, updated_at')
             .eq('archived', false)
             .in('code', historyCodes.slice(0, 5))
             .order('updated_at', { ascending: false });

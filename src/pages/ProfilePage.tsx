@@ -23,6 +23,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [myTracks, setMyTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState(false);
+  const [activeTab, setActiveTab] = useState('profile');
   const [copied, setCopied] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,13 +94,22 @@ export default function ProfilePage() {
     }
   }
 
+  // Lazy load tracks only when user switches to 'tracks' tab
+  useEffect(() => {
+    if (activeTab === 'tracks' && userData?.history && myTracks.length === 0 && !loadingTracks) {
+      loadMyTracks(userData.history);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, userData?.history]);
+
   async function loadMyTracks(history: string) {
     if (!history) return;
     setLoadingTracks(true);
     try {
       const codes = history.split(',').filter(Boolean);
       if (codes.length === 0) return;
-      const { data } = await supabase.from('tracks').select('*').eq('archived', false).in('code', codes.slice(0, 10));
+      // Select only columns needed for my tracks display — reduces bandwidth
+      const { data } = await supabase.from('tracks').select('id, code, status, updated_at').eq('archived', false).in('code', codes.slice(0, 10));
       if (data) setMyTracks(data);
     } catch (err) {
       // Error loading tracks
@@ -243,7 +253,7 @@ export default function ProfilePage() {
       )}
       <div className="mb-6"><h2 className="text-2xl font-bold mb-2">{t.profileTitle}</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : t.profileDesc}</p></div>
 
-      <Tabs defaultValue="profile" className="mb-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">{t.profileTitle}</TabsTrigger>
           <TabsTrigger value="address">Адрес</TabsTrigger>

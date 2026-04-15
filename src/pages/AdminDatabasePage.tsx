@@ -1,6 +1,6 @@
 import { useAppLanguage } from '../hooks/useLanguage';
 import { authenticatedFetch } from '../lib/api';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Database, Search, Filter, ChevronLeft, ChevronRight, Loader2, Package, Calendar } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -80,14 +80,47 @@ export default function AdminDatabasePage() {
 
   useEffect(() => {
     fetchTracks();
+    // Intentionally not including `search` — search triggers via form submit only
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter]);
+
+  // Debounced search — prevents excessive API calls while typing
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    // Clear previous timer
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    // Debounce: wait 300ms after last change, then reset page and fetch
+    searchTimerRef.current = setTimeout(() => {
+      setPage(1);
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    // Trigger fetch when page changes (search change triggers via page reset)
+    fetchTracks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
     fetchTracks();
   };
+
+  // Memoize formatted dates to avoid 250 Date allocations per render (5 date columns × 50 rows)
+  const formattedTracks = useMemo(() =>
+    tracks.map(t => ({
+      ...t,
+      _received: formatDate(t.received_date),
+      _intransit: formatDate(t.intransit_date),
+      _border: formatDate(t.border_date),
+      _warehouse: formatDate(t.warehouse_date),
+      _delivered: formatDate(t.delivered_date),
+    })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tracks]);
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '—';
@@ -124,7 +157,7 @@ export default function AdminDatabasePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={t.searchByCode}
                 className="pl-10"
               />
@@ -176,7 +209,7 @@ export default function AdminDatabasePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {tracks.map((track) => (
+                  {formattedTracks.map((track) => (
                     <TableRow key={track.id}>
                       <TableCell className="font-mono font-medium">{track.code}</TableCell>
                       <TableCell>
@@ -187,31 +220,31 @@ export default function AdminDatabasePage() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(track.received_date)}
+                          {track._received}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(track.intransit_date)}
+                          {track._intransit}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(track.border_date)}
+                          {track._border}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(track.warehouse_date)}
+                          {track._warehouse}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3 text-muted-foreground" />
-                          {formatDate(track.delivered_date)}
+                          {track._delivered}
                         </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">{track.notes || '—'}</TableCell>
