@@ -9,7 +9,7 @@
 - **Frontend**: Next.js 16 (App Router)
 - **Язык**: TypeScript
 - **Стилизация**: TailwindCSS v4
-- **Компоненты**: shadcn/ui (в процессе установки)
+- **Компоненты**: shadcn/ui
 - **База данных**: Supabase (PostgreSQL)
 - **AI**: Groq API + Gemini API (fallback)
 - **Деплой**: Vercel
