@@ -11,8 +11,8 @@ export default function AdminPage() {
     { title: t.batchUpdate, desc: t.batchUpdateDesc, icon: Calendar, href: '/admin/batch-update', color: 'text-orange-500' },
     { title: t.database, desc: t.databaseDesc, icon: Database, href: '/admin/database', color: 'text-green-500' },
     { title: t.archive, desc: t.archiveMenuDesc, icon: Archive, href: '/admin/archive', color: 'text-gray-500' },
-    { title: t.users, desc: t.usersDesc, icon: Users, href: '#', color: 'text-purple-500' },
-    { title: t.broadcast, desc: t.broadcastDesc, icon: Bell, href: '#', color: 'text-red-500' },
+    { title: t.users, desc: t.usersDesc, icon: Users, href: '/admin/users', color: 'text-purple-500' },
+    { title: t.broadcast, desc: t.broadcastDesc, icon: Bell, href: '/admin/broadcast', color: 'text-red-500' },
   ];
 
   return (

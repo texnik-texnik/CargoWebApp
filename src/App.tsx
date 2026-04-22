@@ -15,6 +15,8 @@ import AdminBatchUpdatePage from './pages/AdminBatchUpdatePage';
 import AdminDatabasePage from './pages/AdminDatabasePage';
 import AdminArchivePage from './pages/AdminArchivePage';
 import AdminPricesPage from './pages/AdminPricesPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminBroadcastPage from './pages/AdminBroadcastPage';
 import AIChatPage from './pages/AIChatPage';
 import TermsPage from './pages/TermsPage';
 import AdminRoute from './components/admin/AdminRoute';
@@ -39,6 +41,8 @@ function App() {
         <Route path="/admin/database" element={<AdminRoute><AdminDatabasePage /></AdminRoute>} />
         <Route path="/admin/archive" element={<AdminRoute><AdminArchivePage /></AdminRoute>} />
         <Route path="/admin/prices" element={<AdminRoute><AdminPricesPage /></AdminRoute>} />
+        <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
+        <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcastPage /></AdminRoute>} />
         <Route path="/ai-chat" element={<AIChatPage />} />
       </Routes>
     </AppLayout>

@@ -491,6 +491,88 @@ async function handleBatchUpdate(req: VercelRequest, res: VercelResponse, supaba
   } catch (e: any) { res.status(500).json({ error: e.message }); }
 }
 
+// GET /api/admin?action=get-users
+async function handleGetUsers(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true, users: data || [] });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+// POST /api/admin?action=toggle-admin
+async function handleToggleAdmin(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const { userId, isAdmin } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+
+    const { data, error } = await supabase
+      .from('users')
+      .update({ is_admin: isAdmin, updated_at: new Date().toISOString() })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true, user: data });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+// POST /api/admin?action=broadcast
+async function handleBroadcast(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'message required' });
+
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token) return res.status(500).json({ error: 'TELEGRAM_BOT_TOKEN not configured' });
+
+    // Получаем всех пользователей с telegram_id
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('telegram_id')
+      .not('telegram_id', 'is', null);
+
+    if (error) return res.status(500).json({ error: error.message });
+    if (!users || users.length === 0) return res.status(200).json({ success: true, sent: 0 });
+
+    let sentCount = 0;
+    let errorCount = 0;
+
+    // Отправляем сообщения (в идеале использовать очередь, но для небольшого числа пользователей сойдет и так)
+    for (const user of users) {
+      try {
+        const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: user.telegram_id,
+            text: message,
+            parse_mode: 'HTML'
+          })
+        });
+        
+        if (response.ok) sentCount++;
+        else errorCount++;
+      } catch (e) {
+        errorCount++;
+      }
+    }
+
+    return res.status(200).json({ success: true, sent: sentCount, errors: errorCount });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -519,7 +601,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return handleUnarchiveTrack(req, res, supabase);
     case 'archive-stats':
       return handleArchiveStats(req, res, supabase);
+    case 'get-users':
+      return handleGetUsers(req, res, supabase);
+    case 'toggle-admin':
+      return handleToggleAdmin(req, res, supabase);
+    case 'broadcast':
+      return handleBroadcast(req, res, supabase);
     default:
-      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update, get-tracks, archive-old-tracks, unarchive-track, archive-stats' });
+      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update, get-tracks, archive-old-tracks, unarchive-track, archive-stats, get-users, toggle-admin, broadcast' });
   }
 }
