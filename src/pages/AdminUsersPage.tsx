@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAppLanguage } from '../hooks/useLanguage';
 import { authenticatedFetch } from '../lib/api';
-import { User, Shield, ShieldOff, Search, Loader2 } from 'lucide-react';
+import { Shield, ShieldOff, Search, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 
 interface UserData {

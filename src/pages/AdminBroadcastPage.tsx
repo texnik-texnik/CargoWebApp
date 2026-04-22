@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppLanguage } from '../hooks/useLanguage';
 import { authenticatedFetch } from '../lib/api';
-import { Bell, Send, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Send, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Textarea } from '../components/ui/textarea';
