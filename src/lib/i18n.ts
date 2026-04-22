@@ -15,7 +15,7 @@ export const translations = {
     info: 'Информация', infoDesc: 'Полезная информация о доставке',
     pricesTitle: 'Тарифы', pricesDesc: 'Стоимость доставки и сроки',
     bannedTitle: 'Запрещенные товары', bannedDesc: 'Что нельзя доставлять',
-    addresses: 'Адреса', addressesDesc: 'Наши офисы в Китае и Таджикистане',
+    addresses: 'Адреса', addressesDesc: 'Наши офисы в Китае и Хуросоне',
     termsTitle: 'Шартҳо ва қоидаҳо', termsDesc: 'Қоидаҳои хизматрасонии KHUROSON CARGO',
     waiting: 'Ожидание', received: 'Получен', intransit: 'В пути',
     border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен',
@@ -97,7 +97,7 @@ export const translations = {
     termsForceMajeure: '5. Непредвиденные обстоятельства (Форс-мажор)',
     termsForceMajeureDesc: 'В непредвиденных обстоятельствах, таких как: карантин или пандемия, стихийные бедствия, задержка или запрет рейсов, война или ограничения импорта и экспорта — срок доставки может увеличиться. В таких случаях компенсация ущерба со стороны компании не предусмотрена.',
     // Addresses
-    chinaWarehouse: 'Китай (Гуанчжоу)', tajikistanOffice: 'Таджикистан (Душанбе)',
+    chinaWarehouse: 'Китай (Иву)', tajikistanOffice: 'Таджикистан (Хуросон)',
     warehouseAddress: 'Адрес', hours: 'Режим работы',
     findWarehouse: 'Как найти склад в Китае?', warehouseInstructions: 'Инструкция для отправки груза',
     step1: 'Шаг 1: Получите трек-номер', step2: 'Шаг 2: Укажите трек-номер на посылке',
@@ -235,7 +235,7 @@ export const translations = {
     termsForceMajeure: '5. Ҳолатҳои ғайричашмдошт (Форс-мажор)',
     termsForceMajeureDesc: 'Дар ҳолатҳои ғайричашмдошт, мисли: карантин ё пандемия, офатҳои табиӣ, таъхир ё манъи парвозҳо, ҷанг ё маҳдудиятҳои воридоту содирот — мӯҳлати интиқол метавонад дароз шавад. Дар чунин ҳолатҳо, ҷуброни зарар аз ҷониби ширкат пешбинӣ намешавад.',
     // Additional TJ keys
-    chinaWarehouse: 'Чин (Гуанчжоу)', tajikistanOffice: 'Тоҷикистон (Душанбе)',
+    chinaWarehouse: 'Чин (Иву)', tajikistanOffice: 'Тоҷикистон (Хуросон)',
     warehouseAddress: 'Суроға', hours: 'Вақти корӣ',
     findWarehouse: 'Чӣ тавр анборро дар Чин ёфтан мумкин?', warehouseInstructions: 'Дастурҳо барои фиристодани бор',
     step1: 'Қадами 1: Рақами трекро гиред', step2: 'Қадами 2: Рақами трекро дар бозор нависед',

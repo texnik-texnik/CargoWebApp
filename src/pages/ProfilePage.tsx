@@ -256,7 +256,7 @@ export default function ProfilePage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">{t.profileTitle}</TabsTrigger>
-          <TabsTrigger value="address">Адрес</TabsTrigger>
+          <TabsTrigger value="address">{t.warehouseAddress}</TabsTrigger>
           <TabsTrigger value="tracks">Мои треки</TabsTrigger>
         </TabsList>
 
