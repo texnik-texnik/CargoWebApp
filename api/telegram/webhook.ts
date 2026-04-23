@@ -14,6 +14,17 @@ async function sendTG(chatId: string, text: string, reply_markup?: any) {
   });
 }
 
+const MAIN_KEYBOARD = {
+  keyboard: [
+    [{ text: '🔍 Ҷустуҷӯи трек' }, { text: '🇨🇳 Суроғаи Чин' }],
+    [{ text: '👨‍💻 Администратор' }, { text: '🇹🇯 Суроғаи Хуросон' }],
+    [{ text: '💰 Тарифҳо' }, { text: '👤 Профил' }]
+  ],
+  resize_keyboard: true
+};
+
+const CHINA_ADDR = `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门-Khuroson`;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
   try {
@@ -26,10 +37,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (text === '/start') {
-      await sendTG(chatId, '👋 Добро пожаловать!\n\nВведите <b>номер телефона</b>.\nФормат: <b>+992XXXXXXXXX</b>', { force_reply: true, input_field_placeholder: '+992...' });
+      await sendTG(chatId, '👋 Хуш омадед ба <b>KHUROSON CARGO</b>!\n\nБарои гирифтани рамзи тасдиқ рақами телефонатонро фиристед ё аз тугмаҳои поён истифода баред.', MAIN_KEYBOARD);
       return res.status(200).end();
     }
 
+    // Обработка кнопок
+    if (text === '🔍 Ҷустуҷӯи трек') {
+      await sendTG(chatId, '🔎 Лутфан <b>трек-кодро</b> ворид кунед:');
+      return res.status(200).end();
+    }
+
+    if (text === '🇨🇳 Суроғаи Чин') {
+      await sendTG(chatId, `🇨🇳 <b>Суроғаи анбор дар Чин:</b>\n\n<code>${CHINA_ADDR}</code>\n\n(Барои нусхабардорӣ болои суроға пахш кунед)`);
+      return res.status(200).end();
+    }
+
+    if (text === '👨‍💻 Администратор') {
+      await sendTG(chatId, '👨‍💻 <b>Контактҳои администратор:</b>\n\nTelegram: @khuroson_admin\nТелефон: +992 000 00 00 00');
+      return res.status(200).end();
+    }
+
+    if (text === '🇹🇯 Суроғаи Хуросон') {
+      await sendTG(chatId, '🇹🇯 <b>Суроғаи мо дар Хуросон:</b>\n\nНоҳияи Хуросон, маркази ноҳия.\nОриентир: Назди бозор.');
+      return res.status(200).end();
+    }
+
+    if (text === '💰 Тарифҳо') {
+      const { data: prices } = await supabase.from('prices').select('*').order('weight_from', { ascending: true });
+      let msg = '💰 <b>Тарифҳои интиқол:</b>\n\n';
+      if (prices && prices.length > 0) {
+        prices.forEach(p => {
+          msg += `• Аз ${p.weight_from} то ${p.weight_to || '...'} кг: <b>$${p.price}</b>\n`;
+        });
+      } else {
+        msg += 'Маълумот дар бораи нархҳо ҳоло дастрас нест.';
+      }
+      await sendTG(chatId, msg);
+      return res.status(200).end();
+    }
+
+    if (text === '👤 Профил') {
+      const { data: user } = await supabase.from('users').select('*').eq('telegram_id', String(update.message.from.id)).single();
+      if (user) {
+        await sendTG(chatId, `👤 <b>Профили шумо:</b>\n\nНом: ${user.name || 'Навишта нашудааст'}\nID: ${user.client_id || '—'}\nТелефон: ${user.phone || '—'}`);
+      } else {
+        await sendTG(chatId, '👤 Шумо то ҳол бақайдгирӣ накардаед. Лутфан рақами телефонатонро фиристед.');
+      }
+      return res.status(200).end();
+    }
+
+    // Проверка на номер телефона
     const phoneMatch = text.match(/^\+?992\d{9}$/);
     if (phoneMatch) {
       const phone = text.startsWith('+') ? text : `+${text}`;
@@ -45,11 +102,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         await supabase.from('users').update({ verification_code: code, verification_expires: expiresAt.toISOString(), telegram_chat_id: String(chatId), telegram_id: String(update.message.from.id) }).eq('phone', phone);
       }
-      await sendTG(chatId, `🔐 <b>Код подтверждения:</b>\n\n━━━━━━━━━━━━━━━\n<b>    ${code}</b>\n━━━━━━━━━━━━━━━\n\n⏰ 10 минут\nВведите в приложении.`);
+      await sendTG(chatId, `🔐 <b>Рамзи тасдиқ:</b>\n\n━━━━━━━━━━━━━━━\n<b>    ${code}</b>\n━━━━━━━━━━━━━━━\n\n⏰ 10 дақиқа эътибор дорад.\nОнро дар барнома ворид кунед.`);
       return res.status(200).end();
     }
 
-    await sendTG(chatId, '⚠️ Введите номер: <b>+992XXXXXXXXX</b>', { force_reply: true });
+    // Если это трек-код (длинная строка без пробелов)
+    if (text.length >= 8 && !text.includes(' ')) {
+      const { data: track } = await supabase.from('tracks').select('*').eq('code', text).single();
+      if (track) {
+        const statusLabels: Record<string, string> = { waiting: 'Интизорӣ', received: 'Қабул шуд', intransit: 'Дар роҳ', border: 'Дар сарҳад', warehouse: 'Дар анбор', payment: 'Пардохт', delivered: 'Расонида шуд' };
+        await sendTG(chatId, `📦 <b>Маълумот дар бораи трек:</b>\n\nКод: <code>${track.code}</code>\nВазъият: <b>${statusLabels[track.status] || track.status}</b>\nСанаи охирин: ${track.updated_at ? new Date(track.updated_at).toLocaleDateString() : '—'}`);
+      } else {
+        await sendTG(chatId, `❌ Трек-код <b>${text}</b> ёфт нашуд.`);
+      }
+      return res.status(200).end();
+    }
+
+    await sendTG(chatId, '⚠️ Лутфан рақами телефонро ворид кунед (масалан: +992900017456) ё аз меню истифода баред.', MAIN_KEYBOARD);
     return res.status(200).end();
   } catch (e) { console.error(e); return res.status(200).end(); }
 }
