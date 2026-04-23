@@ -48,15 +48,62 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!update?.message) return res.status(200).end();
     const chatId = update.message.chat.id;
     const text = update.message.text?.trim();
-    if (!text) return res.status(200).end();
+    const contact = update.message.contact;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const userId = String(update.message.from.id);
+    const tgFrom = update.message.from;
 
     if (text === '/start') {
-      await sendTG(chatId, '👋 Хуш омадед ба <b>KHUROSON CARGO</b>!\n\nБарои гирифтани рамзи тасдиқ рақами телефонатонро фиристед ё аз тугмаҳои поён истифода баред.', MAIN_KEYBOARD);
+      await sendTG(chatId, '👋 Хуш омадед ба <b>KHUROSON CARGO</b>!\n\nБарои бақайдгирӣ ва гирифтани рамзи тасдиқ, тугмаи <b>"📲 Фиристодани рақам"</b>-ро пахш кунед.', {
+        keyboard: [
+          [{ text: '📲 Фиристодани рақам', request_contact: true }],
+          ...MAIN_KEYBOARD.keyboard
+        ],
+        resize_keyboard: true
+      });
       return res.status(200).end();
     }
+
+    // Обработка отправленного контакта
+    if (contact) {
+      let phone = contact.phone_number;
+      if (!phone.startsWith('+')) phone = `+${phone}`;
+      
+      const code = generateCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      const { data: existing } = await supabase.from('users').select('*').eq('phone', phone).single();
+      
+      if (!existing) {
+        const { data: last } = await supabase.from('users').select('client_id').not('client_id', 'is', null).order('created_at', { ascending: false }).limit(1);
+        let n = 1001;
+        if (last?.[0]?.client_id) {
+          const num = parseInt(last[0].client_id.replace('KH-', ''), 10);
+          if (!isNaN(num)) n = num + 1;
+        }
+        await supabase.from('users').insert({ 
+          phone, 
+          name: `${contact.first_name || ''} ${contact.last_name || ''}`.trim(), 
+          client_id: `KH-${n}`, 
+          telegram_chat_id: String(chatId), 
+          telegram_id: String(contact.user_id || tgFrom.id), 
+          verification_code: code, 
+          verification_expires: expiresAt.toISOString() 
+        });
+      } else {
+        await supabase.from('users').update({ 
+          verification_code: code, 
+          verification_expires: expiresAt.toISOString(), 
+          telegram_chat_id: String(chatId), 
+          telegram_id: String(contact.user_id || tgFrom.id) 
+        }).eq('phone', phone);
+      }
+
+      await sendTG(chatId, `🔐 <b>Рамзи тасдиқи шумо:</b>\n\n━━━━━━━━━━━━━━━\n<b>    ${code}</b>\n━━━━━━━━━━━━━━━\n\nИн рамзро дар барнома ворид кунед. Эътибор дорад: 10 дақиқа.`, MAIN_KEYBOARD);
+      return res.status(200).end();
+    }
+
+    if (!text) return res.status(200).end();
 
     // Обработка кнопок
     if (text === '🔍 Ҷустуҷӯи трек') {
