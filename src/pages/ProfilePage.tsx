@@ -121,23 +121,34 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       const nameToSave = userData.name.trim();
-      const langToSave = userData.lang || 'ru';
+      const langToSave = userData.lang || lang || 'ru';
+      const telegramId = userData.telegram_id;
+
+      if (!telegramId) throw new Error('Telegram ID не найден');
       
-      // Используем serverless API для обхода RLS
       const response = await fetch('/api/auth/save-name', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, name: nameToSave, lang: langToSave }),
+        body: JSON.stringify({ 
+          telegram_id: telegramId, 
+          phone: phone, 
+          name: nameToSave, 
+          lang: langToSave 
+        }),
       });
       
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Ошибка сохранения');
       }
+
+      const result = await response.json();
+      const updatedUserFromDb = result.user;
       
-      // Сначала обновляем localStorage
-      const updatedUser = { ...JSON.parse(localStorage.getItem('user') || '{}'), phone, name: nameToSave, lang: langToSave };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      // Обновляем localStorage и состояние
+      localStorage.setItem('user', JSON.stringify(updatedUserFromDb));
+      setUserData(updatedUserFromDb);
+      setPhone(updatedUserFromDb.phone);
       
       setEditing(false);
       setSuccessMessage('✅ Профиль успешно сохранён!');
@@ -275,7 +286,22 @@ export default function ProfilePage() {
                 <Input id="name" value={userData?.name || ''} onChange={(e) => setUserData((prev: any) => ({ ...prev, name: e.target.value }))} disabled={!editing} placeholder="Ivan Ivanov" className="mt-2" /></div>
               <Separator />
               <div><Label htmlFor="phone" className="flex items-center gap-2"><Phone className="h-4 w-4" /> Телефон</Label>
-                <Input id="phone" type="tel" value={phone} disabled className="mt-2" /></div>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-sm font-medium text-muted-foreground">+992</span>
+                  <Input 
+                    id="phone" 
+                    type="tel" 
+                    value={phone.replace('+992', '')} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setPhone('+992' + val);
+                    }}
+                    disabled={!editing} 
+                    placeholder="90 000 00 00" 
+                    className="flex-1" 
+                  />
+                </div>
+              </div>
               <Separator />
               <div><Label htmlFor="language" className="flex items-center gap-2"><Globe className="h-4 w-4" /> Язык</Label>
                 <Select value={lang} onValueChange={(val) => setLang(val as 'ru' | 'tj')} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
