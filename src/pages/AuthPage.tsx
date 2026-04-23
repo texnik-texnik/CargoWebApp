@@ -63,7 +63,7 @@ export default function AuthPage() {
         }),
       });
 
-      if (!response.ok) throw new Error(t.authError || 'Ошибка авторизации');
+      if (!response.ok) throw new Error(t.authError || 'Auth error');
 
       const data = await response.json();
       localStorage.setItem('user', JSON.stringify(data.user));
@@ -90,6 +90,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
+    console.log('TG Init, version:', tg?.version);
     
     if (!tg) {
       setError(t.appTelegramOnly);
@@ -100,7 +101,8 @@ export default function AuthPage() {
     tg.ready();
     tg.expand();
 
-    if (tg.isVersionAtLeast?.('6.9')) {
+    // requestContact is available since 6.0
+    if (tg.isVersionAtLeast?.('6.0')) {
       setIsTgContactAvailable(true);
     }
 
@@ -124,23 +126,42 @@ export default function AuthPage() {
 
   const handleRequestContact = () => {
     const tg = (window as any).Telegram?.WebApp;
+    
     if (tg && tg.requestContact) {
-      tg.requestContact((callbackData: any) => {
-        if (callbackData.status === 'sent' && callbackData.responseUnsafe?.contact?.phone_number) {
-          let phoneNum = callbackData.responseUnsafe.contact.phone_number;
-          // IMPORTANT: Telegram might return phone with + or without it
-          phoneNum = phoneNum.replace(/\D/g, '');
-          if (phoneNum.startsWith('992')) {
-            phoneNum = phoneNum.slice(3);
+      try {
+        setError(null);
+        tg.requestContact((callbackData: any) => {
+          if (callbackData && callbackData.status === 'sent') {
+            const phoneNumber = callbackData.responseUnsafe?.contact?.phone_number;
+            if (phoneNumber) {
+              let cleanPhone = phoneNumber.replace(/\D/g, '');
+              if (cleanPhone.startsWith('992')) {
+                cleanPhone = cleanPhone.slice(3);
+              }
+              setPhone(formatPhone(cleanPhone));
+              setStep('setup');
+            } else {
+              const msg = lang === 'tj' ? 'Рақами телефон гирифта нашуд' : 'Не удалось получить номер телефона';
+              setError(msg);
+              alert(msg);
+            }
+          } else {
+            console.log('Contact sharing status:', callbackData?.status);
+            if (callbackData?.status === 'error') {
+              alert('Telegram Error: ' + JSON.stringify(callbackData));
+            }
           }
-          setPhone(formatPhone(phoneNum));
-          // After sharing contact, move to setup to confirm name and see the warning
-          setStep('setup');
-        } else {
-          // If user cancelled or error
-          console.log('Contact request failed or cancelled');
-        }
-      });
+        });
+      } catch (err) {
+        const errMsg = 'Error: ' + (err instanceof Error ? err.message : String(err));
+        setError(errMsg);
+        alert(errMsg);
+      }
+    } else {
+      const msg = lang === 'tj' ? 'Ин функсия дар версияи шумо кор намекунад' : 'Эта функция не поддерживается в вашей версии Telegram';
+      setError(msg);
+      alert(msg);
+      setStep('setup'); 
     }
   };
 
@@ -197,7 +218,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-8">
+    <div key={lang} className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-8">
       <Card className="w-full max-w-md border-none shadow-xl bg-card/50 backdrop-blur-sm">
         <CardHeader className="text-center pb-2">
           <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner">
@@ -208,15 +229,15 @@ export default function AuthPage() {
             )}
           </div>
           <CardTitle className="text-3xl font-extrabold tracking-tight">
-            {step === 'loading' ? t.login : step === 'language' ? 'Language / Забон' : step === 'phone_choice' ? 'Регистрация' : step === 'setup' ? t.completeReg : t.error}
+            {step === 'loading' ? t.login : step === 'language' ? t.selectLanguage : step === 'phone_choice' ? t.registration : step === 'setup' ? t.completeReg : t.error}
           </CardTitle>
           <CardDescription className="text-base mt-2">
             {step === 'loading' 
               ? t.checkingTelegram 
               : step === 'language'
-                ? 'Выберите язык обслуживания'
+                ? t.selectLangDesc
                 : step === 'phone_choice' 
-                  ? 'Выберите способ привязки номера'
+                  ? t.selectMethod
                   : step === 'setup' 
                     ? t.providePhoneName 
                     : error}
@@ -230,7 +251,7 @@ export default function AuthPage() {
                 className="h-16 text-lg font-bold flex justify-between px-6"
                 variant="outline"
               >
-                <span>🇷🇺 Русский</span>
+                <span>🇷🇺 {t.russian}</span>
                 <ArrowRight className="h-5 w-5" />
               </Button>
               <Button 
@@ -238,7 +259,7 @@ export default function AuthPage() {
                 className="h-16 text-lg font-bold flex justify-between px-6"
                 variant="outline"
               >
-                <span>🇹🇯 Тоҷикӣ</span>
+                <span>🇹🇯 {t.tajik}</span>
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </div>
@@ -252,14 +273,14 @@ export default function AuthPage() {
                   className="w-full h-16 text-lg font-bold gap-3 shadow-lg shadow-primary/20"
                 >
                   <Phone className="h-6 w-6" />
-                  Использовать номер Telegram
+                  {t.useTelegramNumber}
                 </Button>
               )}
               
               <div className="relative py-2">
                 <div className="absolute inset-0 flex items-center"><Separator /></div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Или</span>
+                  <span className="bg-background px-2 text-muted-foreground">{t.or}</span>
                 </div>
               </div>
 
@@ -269,7 +290,7 @@ export default function AuthPage() {
                 className="w-full h-14 text-base font-medium gap-3 border-dashed"
               >
                 <Keyboard className="h-5 w-5" />
-                Ввести другой номер вручную
+                {t.enterManual}
               </Button>
             </div>
           )}
@@ -322,7 +343,7 @@ export default function AuthPage() {
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1 px-1 leading-tight">
-                  {t.chinaAddrDesc} (авто-перевод на латиницу)
+                  {t.chinaAddrDesc}
                 </p>
               </div>
 
@@ -352,7 +373,7 @@ export default function AuthPage() {
                 onClick={() => setStep('phone_choice')}
                 className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Вернуться к выбору способа
+                {t.backToMethod}
               </button>
             </form>
           )}
@@ -376,7 +397,7 @@ export default function AuthPage() {
               </div>
               <p className="mb-8 text-lg text-destructive font-bold px-4">{error}</p>
               <Button onClick={() => window.location.reload()} size="lg" className="px-12 rounded-2xl h-14 text-lg">
-                {t.back || 'Повторить'}
+                {t.back || 'Retry'}
               </Button>
             </div>
           )}

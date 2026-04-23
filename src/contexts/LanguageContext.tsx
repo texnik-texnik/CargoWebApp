@@ -13,17 +13,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Language>('ru');
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      if (user.lang === 'tj' || user.lang === 'ru') {
-        setLangState(user.lang);
+    const savedLang = localStorage.getItem('lang') as Language;
+    if (savedLang === 'tj' || savedLang === 'ru') {
+      setLangState(savedLang);
+    } else {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        if (user.lang === 'tj' || user.lang === 'ru') {
+          setLangState(user.lang);
+        }
       }
     }
   }, []);
 
   const setLang = (newLang: Language) => {
     setLangState(newLang);
+    localStorage.setItem('lang', newLang);
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       const user = JSON.parse(savedUser);
