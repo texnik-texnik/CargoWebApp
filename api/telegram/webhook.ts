@@ -53,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (text === '👨‍💻 Администратор') {
-      await sendTG(chatId, '👨‍💻 <b>Контактҳои администратор:</b>\n\nTelegram: @khuroson_admin\nТелефон: +992 000 00 00 00');
+      await sendTG(chatId, '👨‍💻 <b>Контактҳои администратор:</b>\n\nTelegram: @IT_TEXNIK\nТелефон: +992 900017456');
       return res.status(200).end();
     }
 
