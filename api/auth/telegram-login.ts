@@ -5,7 +5,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const { telegram_id, first_name, last_name, username, phone, name } = req.body;
+    const { telegram_id, first_name, last_name, username, phone, name, lang } = req.body;
     
     if (!telegram_id) return res.status(400).json({ error: 'telegram_id required' });
 
@@ -26,6 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const updateData: any = {};
       if (phone && !existingUser.phone) updateData.phone = phone;
       if (name && !existingUser.name) updateData.name = name;
+      if (lang && !existingUser.lang) updateData.lang = lang;
 
       let finalUser = existingUser;
       if (Object.keys(updateData).length > 0) {
@@ -53,6 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (username) insertData.username = username;
     if (phone) insertData.phone = phone;
+    if (lang) insertData.lang = lang;
 
     const { data: newUser, error } = await supabase
       .from('users')

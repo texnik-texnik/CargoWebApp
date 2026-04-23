@@ -26,9 +26,9 @@ const transliterate = (text: string): string => {
 };
 
 export default function AuthPage() {
-  const { t } = useAppLanguage();
+  const { t, lang, setLang } = useAppLanguage();
   const navigate = useNavigate();
-  const [step, setStep] = useState<'loading' | 'phone_choice' | 'setup' | 'done'>('loading');
+  const [step, setStep] = useState<'loading' | 'language' | 'phone_choice' | 'setup' | 'done'>('loading');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -71,7 +71,10 @@ export default function AuthPage() {
       if (data.user.phone && data.user.name) {
         navigate('/');
       } else {
-        if (data.user.phone) {
+        const hasLang = localStorage.getItem('app_lang_set');
+        if (!hasLang) {
+          setStep('language');
+        } else if (data.user.phone) {
           setPhone(data.user.phone.replace('+992', ''));
           setStep('setup');
         } else {
@@ -113,18 +116,29 @@ export default function AuthPage() {
     checkAuth(user);
   }, [t.appTelegramOnly, t.failedUserData, checkAuth]);
 
+  const handleLanguageSelect = (selectedLang: 'ru' | 'tj') => {
+    setLang(selectedLang);
+    localStorage.setItem('app_lang_set', 'true');
+    setStep('phone_choice');
+  };
+
   const handleRequestContact = () => {
     const tg = (window as any).Telegram?.WebApp;
     if (tg && tg.requestContact) {
       tg.requestContact((callbackData: any) => {
         if (callbackData.status === 'sent' && callbackData.responseUnsafe?.contact?.phone_number) {
           let phoneNum = callbackData.responseUnsafe.contact.phone_number;
+          // IMPORTANT: Telegram might return phone with + or without it
           phoneNum = phoneNum.replace(/\D/g, '');
           if (phoneNum.startsWith('992')) {
             phoneNum = phoneNum.slice(3);
           }
           setPhone(formatPhone(phoneNum));
+          // After sharing contact, move to setup to confirm name and see the warning
           setStep('setup');
+        } else {
+          // If user cancelled or error
+          console.log('Contact request failed or cancelled');
         }
       });
     }
@@ -136,7 +150,7 @@ export default function AuthPage() {
   };
 
   const handleSetupSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setError(null);
 
     const cleanPhone = phone.replace(/\D/g, '');
@@ -163,6 +177,7 @@ export default function AuthPage() {
           username: tgUser.username,
           phone: getFullPhone(),
           name: name.trim(),
+          lang: lang // Save language preference
         }),
       });
 
@@ -193,19 +208,42 @@ export default function AuthPage() {
             )}
           </div>
           <CardTitle className="text-3xl font-extrabold tracking-tight">
-            {step === 'loading' ? t.login : step === 'phone_choice' ? 'Регистрация' : step === 'setup' ? t.completeReg : t.error}
+            {step === 'loading' ? t.login : step === 'language' ? 'Language / Забон' : step === 'phone_choice' ? 'Регистрация' : step === 'setup' ? t.completeReg : t.error}
           </CardTitle>
           <CardDescription className="text-base mt-2">
             {step === 'loading' 
               ? t.checkingTelegram 
-              : step === 'phone_choice' 
-                ? 'Выберите способ привязки номера'
-                : step === 'setup' 
-                  ? t.providePhoneName 
-                  : error}
+              : step === 'language'
+                ? 'Выберите язык обслуживания'
+                : step === 'phone_choice' 
+                  ? 'Выберите способ привязки номера'
+                  : step === 'setup' 
+                    ? t.providePhoneName 
+                    : error}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
+          {step === 'language' && (
+            <div className="grid grid-cols-1 gap-4">
+              <Button 
+                onClick={() => handleLanguageSelect('ru')}
+                className="h-16 text-lg font-bold flex justify-between px-6"
+                variant="outline"
+              >
+                <span>🇷🇺 Русский</span>
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+              <Button 
+                onClick={() => handleLanguageSelect('tj')}
+                className="h-16 text-lg font-bold flex justify-between px-6"
+                variant="outline"
+              >
+                <span>🇹🇯 Тоҷикӣ</span>
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
+
           {step === 'phone_choice' && (
             <div className="space-y-4">
               {isTgContactAvailable && (
@@ -238,6 +276,13 @@ export default function AuthPage() {
 
           {step === 'setup' && (
             <form onSubmit={handleSetupSubmit} className="space-y-6">
+              <Alert className="bg-amber-50 border-amber-200 text-amber-800 rounded-xl">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-xs font-medium">
+                  {t.phoneWarning}
+                </AlertDescription>
+              </Alert>
+
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground ml-1">
                   {t.phoneLabel}
@@ -302,15 +347,13 @@ export default function AuthPage() {
                 )}
               </Button>
 
-              {step === 'setup' && !tgUser?.phone && (
-                <button 
-                  type="button"
-                  onClick={() => setStep('phone_choice')}
-                  className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Вернуться к выбору способа
-                </button>
-              )}
+              <button 
+                type="button"
+                onClick={() => setStep('phone_choice')}
+                className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Вернуться к выбору способа
+              </button>
             </form>
           )}
 

@@ -133,6 +133,8 @@ export const translations = {
     checkingTelegram: 'Проверяем данные Telegram...', providePhoneName: 'Для доставки укажите телефон и имя',
     failedUserData: 'Не удалось получить данные пользователя. Перезапустите приложение.',
     authTelegram: 'Авторизация через Telegram...', validPhone: 'Введите корректный номер телефона',
+    phoneWarning: 'Важно: на этот номер поступит звонок или SMS. Введите работающий номер.',
+    selectLanguage: 'Выберите язык / Забонро интихоб кунед',
     // AI Chat
     aiGreeting: 'Здравствуйте! Чем могу помочь?', aiError: 'Не удалось получить ответ.',
     aiFallback: 'Ошибка.', messagePlaceholder: 'Сообщение...',
@@ -265,6 +267,8 @@ export const translations = {
     checkingTelegram: 'Санҷиши маълумоти Telegram...', providePhoneName: 'Барои интиқол телефон ва номро ворид кунед',
     failedUserData: 'Маълумоти корбар гирифта нашуд. Барномаро аз нав оғоз кунед.',
     authTelegram: 'Авторизатсия тавассути Telegram...', validPhone: 'Рақами телефонро дуруст ворид кунед',
+    phoneWarning: 'Муҳим: ба ин рақам занг ё SMS меояд. Рақами кории худро ворид кунед.',
+    selectLanguage: 'Забонро интихоб кунед / Выберите язык',
     aiGreeting: 'Салом! Чӣ хел метавонам кӯмак кунам?', aiError: 'Ҷавоб гирифта нашуд.',
     aiFallback: 'Хатогӣ.', messagePlaceholder: 'Паём...',
 
