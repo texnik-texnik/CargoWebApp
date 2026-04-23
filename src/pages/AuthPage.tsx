@@ -1,7 +1,7 @@
 import { useAppLanguage } from '../hooks/useLanguage';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Loader2, CheckCircle, AlertCircle, Phone, ArrowRight, Keyboard } from 'lucide-react';
+import { User, Loader2, AlertCircle, Phone, ArrowRight, Keyboard } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
