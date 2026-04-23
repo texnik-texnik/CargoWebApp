@@ -47,9 +47,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Создаем нового пользователя
+    // Генерируем новый client_id
+    const { data: last } = await supabase
+      .from('users')
+      .select('client_id')
+      .not('client_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    let n = 1001;
+    if (last?.[0]?.client_id) {
+      const num = parseInt(last[0].client_id.replace('KH-', ''), 10);
+      if (!isNaN(num)) n = num + 1;
+    }
+
     const insertData: any = {
-      telegram_id,
+      telegram_id: String(telegram_id),
       name: name || `${first_name || ''} ${last_name || ''}`.trim(),
+      client_id: `KH-${n}`,
     };
     
     if (username) insertData.username = username;

@@ -23,7 +23,23 @@ const MAIN_KEYBOARD = {
   resize_keyboard: true
 };
 
-const CHINA_ADDR = `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门-Khuroson`;
+const CHINA_ADDR_BASE = `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门-Khuroson`;
+
+const transliterate = (text: string): string => {
+  const mapping: { [key: string]: string } = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z',
+    'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r',
+    'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+    'ы': 'y', 'э': 'e', 'ю': 'yu', 'я': 'ya', 'ъ': '', 'ь': '',
+    'ғ': 'gh', 'ӣ': 'i', 'қ': 'q', 'ӯ': 'u', 'ҳ': 'h', 'ҷ': 'j',
+    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo', 'Ж': 'Zh', 'З': 'Z',
+    'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R',
+    'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shch',
+    'Ы': 'Y', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya', 'Ъ': '', 'Ь': '',
+    'Ғ': 'Gh', 'Ӣ': 'I', 'Қ': 'Q', 'Ӯ': 'U', 'Ҳ': 'H', 'Ҷ': 'J'
+  };
+  return text.split('').map(char => mapping[char] || char).join('');
+};
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -35,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!text) return res.status(200).end();
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const userId = String(update.message.from.id);
 
     if (text === '/start') {
       await sendTG(chatId, '👋 Хуш омадед ба <b>KHUROSON CARGO</b>!\n\nБарои гирифтани рамзи тасдиқ рақами телефонатонро фиристед ё аз тугмаҳои поён истифода баред.', MAIN_KEYBOARD);
@@ -48,7 +65,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (text === '🇨🇳 Суроғаи Чин') {
-      await sendTG(chatId, `🇨🇳 <b>Суроғаи анбор дар Чин:</b>\n\n<code>${CHINA_ADDR}</code>\n\n(Барои нусхабардорӣ болои суроға пахш кунед)`);
+      const { data: user } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
+      
+      let personalizedAddr = CHINA_ADDR_BASE;
+      if (user && user.name && user.phone) {
+        const phoneShort = user.phone.replace('+992', '').replace(/\s/g, '');
+        const nameSlug = transliterate(user.name).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        personalizedAddr = `${CHINA_ADDR_BASE}-${nameSlug}-${phoneShort}`;
+      }
+
+      await sendTG(chatId, `🇨🇳 <b>Суроғаи анбор дар Чин:</b>\n\n<code>${personalizedAddr}</code>\n\n(Барои нусхабардорӣ болои суроға пахш кунед)`);
       return res.status(200).end();
     }
 
