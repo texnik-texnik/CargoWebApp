@@ -1,7 +1,7 @@
 import { useAppLanguage } from '../hooks/useLanguage';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Loader2, CheckCircle, AlertCircle, Phone, ArrowRight, Keyboard } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -9,15 +9,32 @@ import { Label } from '../components/ui/label';
 import { Alert, AlertDescription } from '../components/ui/alert';
 import { Separator } from '../components/ui/separator';
 
+const transliterate = (text: string): string => {
+  const mapping: { [key: string]: string } = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh', 'з': 'z',
+    'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r',
+    'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
+    'ы': 'y', 'э': 'e', 'ю': 'yu', 'я': 'ya', 'ъ': '', 'ь': '',
+    'ғ': 'gh', 'ӣ': 'i', 'қ': 'q', 'ӯ': 'u', 'ҳ': 'h', 'ҷ': 'j',
+    'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'Yo', 'Ж': 'Zh', 'З': 'Z',
+    'И': 'I', 'Й': 'Y', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N', 'О': 'O', 'П': 'P', 'Р': 'R',
+    'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'Kh', 'Ц': 'Ts', 'Ч': 'Ch', 'Ш': 'Sh', 'Щ': 'Shch',
+    'Ы': 'Y', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya', 'Ъ': '', 'Ь': '',
+    'Ғ': 'Gh', 'Ӣ': 'I', 'Қ': 'Q', 'Ӯ': 'U', 'Ҳ': 'H', 'Ҷ': 'J'
+  };
+  return text.split('').map(char => mapping[char] || char).join('');
+};
+
 export default function AuthPage() {
   const { t } = useAppLanguage();
   const navigate = useNavigate();
-  const [step, setStep] = useState<'loading' | 'setup' | 'done'>('loading');
+  const [step, setStep] = useState<'loading' | 'phone_choice' | 'setup' | 'done'>('loading');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tgUser, setTgUser] = useState<any>(null);
+  const [isTgContactAvailable, setIsTgContactAvailable] = useState(false);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -29,40 +46,11 @@ export default function AuthPage() {
 
   const getFullPhone = () => {
     const cleanDigits = phone.replace(/\D/g, '');
+    if (cleanDigits.startsWith('992')) return `+${cleanDigits}`;
     return `+992${cleanDigits}`;
   };
 
-  useEffect(() => {
-    // Проверяем Telegram WebApp
-    const tg = (window as any).Telegram?.WebApp;
-    
-    if (!tg) {
-      // Не в Telegram - показываем ошибку
-      setError(t.appTelegramOnly);
-      setStep('done');
-      return;
-    }
-
-    tg.ready();
-    tg.expand();
-
-    const user = tg.initDataUnsafe?.user;
-    
-    if (!user) {
-      setError('Failed to get user data. Restart.');
-      setStep('done');
-      return;
-    }
-
-    setTgUser(user);
-    setName(`${user.first_name || ''} ${user.last_name || ''}`.trim());
-
-    // Проверяем авторизацию
-    checkAuth(user);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function checkAuth(user: any) {
+  const checkAuth = useCallback(async (user: any) => {
     try {
       const response = await fetch('/api/auth/telegram-login', {
         method: 'POST',
@@ -75,37 +63,85 @@ export default function AuthPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Ошибка авторизации');
+      if (!response.ok) throw new Error(t.authError || 'Ошибка авторизации');
 
       const data = await response.json();
-      console.log('Auth response:', data);
-      console.log('User from API:', data.user);
-      console.log('is_admin from API:', data.user?.is_admin);
-      
-      // Сохраняем пользователя
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // Если есть телефон и имя - сразу на главную
       if (data.user.phone && data.user.name) {
         navigate('/');
       } else {
-        // Нужна настройка профиля
-        setPhone(data.user.phone || '');
-        setName(data.user.name || name);
-        setStep('setup');
+        if (data.user.phone) {
+          setPhone(data.user.phone.replace('+992', ''));
+          setStep('setup');
+        } else {
+          setStep('phone_choice');
+        }
+        setName(data.user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim());
       }
     } catch (err: any) {
       setError(err.message);
       setStep('done');
     }
-  }
+  }, [navigate, t.authError]);
+
+  useEffect(() => {
+    const tg = (window as any).Telegram?.WebApp;
+    
+    if (!tg) {
+      setError(t.appTelegramOnly);
+      setStep('done');
+      return;
+    }
+
+    tg.ready();
+    tg.expand();
+
+    if (tg.isVersionAtLeast?.('6.9')) {
+      setIsTgContactAvailable(true);
+    }
+
+    const user = tg.initDataUnsafe?.user;
+    
+    if (!user) {
+      setError(t.failedUserData || 'Failed to get user data. Restart.');
+      setStep('done');
+      return;
+    }
+
+    setTgUser(user);
+    checkAuth(user);
+  }, [t.appTelegramOnly, t.failedUserData, checkAuth]);
+
+  const handleRequestContact = () => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg && tg.requestContact) {
+      tg.requestContact((callbackData: any) => {
+        if (callbackData.status === 'sent' && callbackData.responseUnsafe?.contact?.phone_number) {
+          let phoneNum = callbackData.responseUnsafe.contact.phone_number;
+          phoneNum = phoneNum.replace(/\D/g, '');
+          if (phoneNum.startsWith('992')) {
+            phoneNum = phoneNum.slice(3);
+          }
+          setPhone(formatPhone(phoneNum));
+          setStep('setup');
+        }
+      });
+    }
+  };
+
+  const handleNameChange = (val: string) => {
+    const transliterated = transliterate(val);
+    setName(transliterated.replace(/[^a-zA-Z\s]/g, ''));
+  };
 
   const handleSetupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (phone.replace(/\D/g, '').length < 9) {
-      setError('Enter valid phone');
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 9) {
+      setError(t.validPhone || 'Enter valid phone');
       return;
     }
 
@@ -147,93 +183,158 @@ export default function AuthPage() {
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">
-            {step === 'loading' ? t.login : step === 'setup' ? 'Complete registration' : t.error}
+      <Card className="w-full max-w-md border-none shadow-xl bg-card/50 backdrop-blur-sm">
+        <CardHeader className="text-center pb-2">
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary shadow-inner">
+            {step === 'loading' ? (
+              <Loader2 className="h-10 w-10 animate-spin" />
+            ) : (
+              <User className="h-10 w-10" />
+            )}
+          </div>
+          <CardTitle className="text-3xl font-extrabold tracking-tight">
+            {step === 'loading' ? t.login : step === 'phone_choice' ? 'Регистрация' : step === 'setup' ? t.completeReg : t.error}
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-base mt-2">
             {step === 'loading' 
-              ? 'Checking Telegram...' 
-              : step === 'setup' 
-                ? 'Provide phone and name' 
-                : error}
+              ? t.checkingTelegram 
+              : step === 'phone_choice' 
+                ? 'Выберите способ привязки номера'
+                : step === 'setup' 
+                  ? t.providePhoneName 
+                  : error}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {step === 'setup' && (
-            <form onSubmit={handleSetupSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Имя (латиницей)</Label>
-                <div className="relative mt-2">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
-                    placeholder="Toshmat"
-                    className="pl-10"
-                    required
-                    autoFocus
-                  />
+        <CardContent className="pt-6">
+          {step === 'phone_choice' && (
+            <div className="space-y-4">
+              {isTgContactAvailable && (
+                <Button 
+                  onClick={handleRequestContact}
+                  className="w-full h-16 text-lg font-bold gap-3 shadow-lg shadow-primary/20"
+                >
+                  <Phone className="h-6 w-6" />
+                  Использовать номер Telegram
+                </Button>
+              )}
+              
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center"><Separator /></div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Или</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">Используется в адресе склада Китая</p>
               </div>
 
-              <Separator />
+              <Button 
+                variant="outline" 
+                onClick={() => setStep('setup')}
+                className="w-full h-14 text-base font-medium gap-3 border-dashed"
+              >
+                <Keyboard className="h-5 w-5" />
+                Ввести другой номер вручную
+              </Button>
+            </div>
+          )}
 
-              <div>
-                <Label htmlFor="phone">Номер телефона</Label>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-lg font-medium text-muted-foreground">+992</span>
+          {step === 'setup' && (
+            <form onSubmit={handleSetupSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground ml-1">
+                  {t.phoneLabel}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-12 items-center rounded-xl border bg-muted/30 px-4 font-bold text-lg text-primary">
+                    +992
+                  </div>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(formatPhone(e.target.value))}
-                    placeholder="XX XXX XX XX"
-                    className="flex-1"
+                    placeholder="00 000 00 00"
+                    className="h-12 flex-1 text-xl rounded-xl transition-all focus:ring-4 focus:ring-primary/10"
                     required
+                    autoFocus={!phone}
                     maxLength={15}
                   />
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground ml-1">
+                  {t.nameLabel}
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground/60" />
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => handleNameChange(e.target.value)}
+                    placeholder="Toshmat Toshmatov"
+                    className="h-12 pl-12 text-lg rounded-xl transition-all focus:ring-4 focus:ring-primary/10"
+                    required
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1 px-1 leading-tight">
+                  {t.chinaAddrDesc} (авто-перевод на латиницу)
+                </p>
+              </div>
+
               {error && (
-                <Alert variant="destructive">
+                <Alert variant="destructive" className="rounded-xl border-none bg-destructive/10 text-destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
+                  <AlertDescription className="font-medium">{error}</AlertDescription>
                 </Alert>
               )}
 
-              <Button type="submit" disabled={loading} className="w-full">
+              <Button type="submit" disabled={loading} className="h-14 w-full text-xl font-black rounded-2xl shadow-xl shadow-primary/25 transition-all active:scale-95">
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Сохранение...
+                    <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                    {t.saving}
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Продолжить
+                    {t.continue}
+                    <ArrowRight className="ml-3 h-6 w-6" />
                   </>
                 )}
               </Button>
+
+              {step === 'setup' && !tgUser?.phone && (
+                <button 
+                  type="button"
+                  onClick={() => setStep('phone_choice')}
+                  className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Вернуться к выбору способа
+                </button>
+              )}
             </form>
           )}
 
           {step === 'loading' && (
-            <div className="flex flex-col items-center justify-center py-8">
-              <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-              <p className="text-muted-foreground">Авторизация через Telegram...</p>
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="relative h-24 w-24">
+                <div className="absolute inset-0 animate-ping rounded-full bg-primary/20"></div>
+                <div className="relative flex h-full w-full items-center justify-center rounded-full bg-primary/5">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                </div>
+              </div>
+              <p className="mt-8 animate-pulse text-lg font-bold text-primary">{t.authTelegram}</p>
             </div>
           )}
 
           {step === 'done' && error && (
-            <div className="text-center py-4">
-              <p className="text-red-500 mb-4">{error}</p>
-              <Button onClick={() => window.location.reload()}>Повторить</Button>
+            <div className="flex flex-col items-center py-8 text-center">
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-50 text-red-500 shadow-inner">
+                <AlertCircle className="h-10 w-10" />
+              </div>
+              <p className="mb-8 text-lg text-destructive font-bold px-4">{error}</p>
+              <Button onClick={() => window.location.reload()} size="lg" className="px-12 rounded-2xl h-14 text-lg">
+                {t.back || 'Повторить'}
+              </Button>
             </div>
           )}
         </CardContent>
