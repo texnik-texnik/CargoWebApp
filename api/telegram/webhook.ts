@@ -5,8 +5,6 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-function generateCode(): string { return Math.floor(1000 + Math.random() * 9000).toString(); }
-
 async function sendTG(chatId: string, text: string, reply_markup?: any) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -23,7 +21,7 @@ const MAIN_KEYBOARD = {
   resize_keyboard: true
 };
 
-const CHINA_ADDR_BASE = `浙江省金华市义乌市荷叶塘工业区东青路87号一楼 库房1号门-Khuroson`;
+const CHINA_ADDR_BASE = `浙江省金华市义乌市荷叶塘工業区东青路87号一楼 库房1号门-Khuroson`;
 
 const transliterate = (text: string): string => {
   const mapping: { [key: string]: string } = {
@@ -48,62 +46,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!update?.message) return res.status(200).end();
     const chatId = update.message.chat.id;
     const text = update.message.text?.trim();
-    const contact = update.message.contact;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const tgFrom = update.message.from;
+    const userId = String(update.message.from.id);
 
     if (text === '/start') {
-      await sendTG(chatId, '👋 Хуш омадед ба <b>KHUROSON CARGO</b>!\n\nБарои бақайдгирӣ ва гирифтани рамзи тасдиқ, тугмаи <b>"📲 Фиристодани рақам"</b>-ро пахш кунед.', {
-        keyboard: [
-          [{ text: '📲 Фиристодани рақам', request_contact: true }],
-          ...MAIN_KEYBOARD.keyboard
-        ],
-        resize_keyboard: true
-      });
+      await sendTG(chatId, '👋 Хуш омадед ба <b>KHUROSON CARGO</b>!\n\nИн бот ба шумо кӯмак мекунад, ки борҳои худро пайгирӣ кунед ва маълумоти лозимиро гиред.\n\nЛутфан аз тугмаҳои поён истифода баред.', MAIN_KEYBOARD);
       return res.status(200).end();
     }
-
-    // Обработка отправленного контакта
-    if (contact) {
-      let phone = contact.phone_number;
-      if (!phone.startsWith('+')) phone = `+${phone}`;
-      
-      const code = generateCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      const { data: existing } = await supabase.from('users').select('*').eq('phone', phone).single();
-      
-      if (!existing) {
-        const { data: last } = await supabase.from('users').select('client_id').not('client_id', 'is', null).order('created_at', { ascending: false }).limit(1);
-        let n = 1001;
-        if (last?.[0]?.client_id) {
-          const num = parseInt(last[0].client_id.replace('KH-', ''), 10);
-          if (!isNaN(num)) n = num + 1;
-        }
-        await supabase.from('users').insert({ 
-          phone, 
-          name: `${contact.first_name || ''} ${contact.last_name || ''}`.trim(), 
-          client_id: `KH-${n}`, 
-          telegram_chat_id: String(chatId), 
-          telegram_id: String(contact.user_id || tgFrom.id), 
-          verification_code: code, 
-          verification_expires: expiresAt.toISOString() 
-        });
-      } else {
-        await supabase.from('users').update({ 
-          verification_code: code, 
-          verification_expires: expiresAt.toISOString(), 
-          telegram_chat_id: String(chatId), 
-          telegram_id: String(contact.user_id || tgFrom.id) 
-        }).eq('phone', phone);
-      }
-
-      await sendTG(chatId, `🔐 <b>Рамзи тасдиқи шумо:</b>\n\n━━━━━━━━━━━━━━━\n<b>    ${code}</b>\n━━━━━━━━━━━━━━━\n\nИн рамзро дар барнома ворид кунед. Эътибор дорад: 10 дақиқа.`, MAIN_KEYBOARD);
-      return res.status(200).end();
-    }
-
-    if (!text) return res.status(200).end();
 
     // Обработка кнопок
     if (text === '🔍 Ҷустуҷӯи трек') {
@@ -150,37 +100,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (text === '👤 Профил') {
-      const { data: user } = await supabase.from('users').select('*').eq('telegram_id', String(update.message.from.id)).single();
+      const { data: user } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
       if (user) {
         await sendTG(chatId, `👤 <b>Профили шумо:</b>\n\nНом: ${user.name || 'Навишта нашудааст'}\nID: ${user.client_id || '—'}\nТелефон: ${user.phone || '—'}`);
       } else {
-        await sendTG(chatId, '👤 Шумо то ҳол бақайдгирӣ накардаед. Лутфан рақами телефонатонро фиристед.');
+        await sendTG(chatId, '👤 Шумо то ҳол бақайдгирӣ накардаед. Лутфан аввал дар барнома бақайдгирӣ кунед.');
       }
-      return res.status(200).end();
-    }
-
-    // Проверка на номер телефона
-    const phoneMatch = text.match(/^\+?992\d{9}$/);
-    if (phoneMatch) {
-      const phone = text.startsWith('+') ? text : `+${text}`;
-      const code = generateCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      const { data: existing } = await supabase.from('users').select('*').eq('phone', phone).single();
-      if (!existing) {
-        const { data: last } = await supabase.from('users').select('client_id').not('client_id', 'is', null).order('created_at', { ascending: false }).limit(1);
-        let n = 1001;
-        if (last?.[0]?.client_id) { const num = parseInt(last[0].client_id.replace('KH-', ''), 10); if (!isNaN(num)) n = num + 1; }
-        await supabase.from('users').insert({ phone, name: '', client_id: `KH-${n}`, telegram_chat_id: String(chatId), telegram_id: String(update.message.from.id), verification_code: code, verification_expires: expiresAt.toISOString() });
-      } else {
-        await supabase.from('users').update({ verification_code: code, verification_expires: expiresAt.toISOString(), telegram_chat_id: String(chatId), telegram_id: String(update.message.from.id) }).eq('phone', phone);
-      }
-      await sendTG(chatId, `🔐 <b>Рамзи тасдиқ:</b>\n\n━━━━━━━━━━━━━━━\n<b>    ${code}</b>\n━━━━━━━━━━━━━━━\n\n⏰ 10 дақиқа эътибор дорад.\nОнро дар барнома ворид кунед.`);
       return res.status(200).end();
     }
 
     // Если это трек-код (длинная строка без пробелов)
-    if (text.length >= 8 && !text.includes(' ')) {
+    if (text && text.length >= 8 && !text.includes(' ')) {
       const { data: track } = await supabase.from('tracks').select('*').eq('code', text).single();
       if (track) {
         const statusLabels: Record<string, string> = { waiting: 'Интизорӣ', received: 'Қабул шуд', intransit: 'Дар роҳ', border: 'Дар сарҳад', warehouse: 'Дар анбор', payment: 'Пардохт', delivered: 'Расонида шуд' };
@@ -191,7 +121,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).end();
     }
 
-    await sendTG(chatId, '⚠️ Лутфан рақами телефонро ворид кунед (масалан: +992900017456) ё аз меню истифода баред.', MAIN_KEYBOARD);
+    await sendTG(chatId, '⚠️ Лутфан аз меню истифода баред.', MAIN_KEYBOARD);
     return res.status(200).end();
   } catch (e) { console.error(e); return res.status(200).end(); }
 }

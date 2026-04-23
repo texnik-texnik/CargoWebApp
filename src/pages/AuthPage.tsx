@@ -28,13 +28,12 @@ const transliterate = (text: string): string => {
 export default function AuthPage() {
   const { t, lang, setLang } = useAppLanguage();
   const navigate = useNavigate();
-  const [step, setStep] = useState<'loading' | 'language' | 'phone_choice' | 'setup' | 'done'>('loading');
+  const [step, setStep] = useState<'loading' | 'language' | 'setup' | 'done'>('loading');
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tgUser, setTgUser] = useState<any>(null);
-  const [isTgContactAvailable, setIsTgContactAvailable] = useState(false);
 
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -74,11 +73,11 @@ export default function AuthPage() {
         const hasLang = localStorage.getItem('app_lang_set');
         if (!hasLang) {
           setStep('language');
-        } else if (data.user.phone) {
-          setPhone(data.user.phone.replace('+992', ''));
-          setStep('setup');
         } else {
-          setStep('phone_choice');
+          if (data.user.phone) {
+            setPhone(data.user.phone.replace('+992', ''));
+          }
+          setStep('setup');
         }
         setName(data.user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim());
       }
@@ -90,7 +89,6 @@ export default function AuthPage() {
 
   useEffect(() => {
     const tg = (window as any).Telegram?.WebApp;
-    console.log('TG Init, version:', tg?.version);
     
     if (!tg) {
       setError(t.appTelegramOnly);
@@ -100,11 +98,6 @@ export default function AuthPage() {
 
     tg.ready();
     tg.expand();
-
-    // requestContact is available since 6.0
-    if (tg.isVersionAtLeast?.('6.0')) {
-      setIsTgContactAvailable(true);
-    }
 
     const user = tg.initDataUnsafe?.user;
     
@@ -121,48 +114,7 @@ export default function AuthPage() {
   const handleLanguageSelect = (selectedLang: 'ru' | 'tj') => {
     setLang(selectedLang);
     localStorage.setItem('app_lang_set', 'true');
-    setStep('phone_choice');
-  };
-
-  const handleRequestContact = () => {
-    const tg = (window as any).Telegram?.WebApp;
-    
-    if (tg && tg.requestContact) {
-      try {
-        setError(null);
-        tg.requestContact((callbackData: any) => {
-          if (callbackData && callbackData.status === 'sent') {
-            const phoneNumber = callbackData.responseUnsafe?.contact?.phone_number;
-            if (phoneNumber) {
-              let cleanPhone = phoneNumber.replace(/\D/g, '');
-              if (cleanPhone.startsWith('992')) {
-                cleanPhone = cleanPhone.slice(3);
-              }
-              setPhone(formatPhone(cleanPhone));
-              setStep('setup');
-            } else {
-              const msg = lang === 'tj' ? 'Рақами телефон гирифта нашуд' : 'Не удалось получить номер телефона';
-              setError(msg);
-              alert(msg);
-            }
-          } else {
-            console.log('Contact sharing status:', callbackData?.status);
-            if (callbackData?.status === 'error') {
-              alert('Telegram Error: ' + JSON.stringify(callbackData));
-            }
-          }
-        });
-      } catch (err) {
-        const errMsg = 'Error: ' + (err instanceof Error ? err.message : String(err));
-        setError(errMsg);
-        alert(errMsg);
-      }
-    } else {
-      const msg = lang === 'tj' ? 'Ин функсия дар версияи шумо кор намекунад' : 'Эта функция не поддерживается в вашей версии Telegram';
-      setError(msg);
-      alert(msg);
-      setStep('setup'); 
-    }
+    setStep('setup');
   };
 
   const handleNameChange = (val: string) => {
@@ -229,18 +181,16 @@ export default function AuthPage() {
             )}
           </div>
           <CardTitle className="text-3xl font-extrabold tracking-tight">
-            {step === 'loading' ? t.login : step === 'language' ? t.selectLanguage : step === 'phone_choice' ? t.registration : step === 'setup' ? t.completeReg : t.error}
+            {step === 'loading' ? t.login : step === 'language' ? t.selectLanguage : step === 'setup' ? t.completeReg : t.error}
           </CardTitle>
           <CardDescription className="text-base mt-2">
             {step === 'loading' 
               ? t.checkingTelegram 
               : step === 'language'
                 ? t.selectLangDesc
-                : step === 'phone_choice' 
-                  ? t.selectMethod
-                  : step === 'setup' 
-                    ? t.providePhoneName 
-                    : error}
+                : step === 'setup' 
+                  ? t.providePhoneName 
+                  : error}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
@@ -261,36 +211,6 @@ export default function AuthPage() {
               >
                 <span>🇹🇯 {t.tajik}</span>
                 <ArrowRight className="h-5 w-5" />
-              </Button>
-            </div>
-          )}
-
-          {step === 'phone_choice' && (
-            <div className="space-y-4">
-              {isTgContactAvailable && (
-                <Button 
-                  onClick={handleRequestContact}
-                  className="w-full h-16 text-lg font-bold gap-3 shadow-lg shadow-primary/20"
-                >
-                  <Phone className="h-6 w-6" />
-                  {t.useTelegramNumber}
-                </Button>
-              )}
-              
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center"><Separator /></div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">{t.or}</span>
-                </div>
-              </div>
-
-              <Button 
-                variant="outline" 
-                onClick={() => setStep('setup')}
-                className="w-full h-14 text-base font-medium gap-3 border-dashed"
-              >
-                <Keyboard className="h-5 w-5" />
-                {t.enterManual}
               </Button>
             </div>
           )}
@@ -367,14 +287,6 @@ export default function AuthPage() {
                   </>
                 )}
               </Button>
-
-              <button 
-                type="button"
-                onClick={() => setStep('phone_choice')}
-                className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {t.backToMethod}
-              </button>
             </form>
           )}
 
