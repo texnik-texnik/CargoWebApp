@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppLanguage } from '../hooks/useLanguage';
 import { authenticatedFetch } from '../lib/api';
-import { Shield, ShieldOff, Search, Loader2 } from 'lucide-react';
+import { Shield, ShieldOff, Search, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader } from '../components/ui/card';
 import { Input } from '../components/ui/input';
@@ -55,6 +55,32 @@ export default function AdminUsersPage() {
       }
     } catch (e) {
       console.error('Error toggling admin status:', e);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const deleteUser = async (userId: string, userName: string) => {
+    if (!window.confirm(`Вы уверены, что хотите удалить пользователя ${userName || 'без имени'}? Это действие необратимо.`)) {
+      return;
+    }
+
+    try {
+      setProcessingId(userId);
+      const res = await authenticatedFetch('/api/admin?action=delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setUsers(users.filter(u => u.id !== userId));
+      } else {
+        alert(data.error || 'Ошибка при удалении пользователя');
+      }
+    } catch (e) {
+      console.error('Error deleting user:', e);
+      alert('Произошла ошибка при удалении');
     } finally {
       setProcessingId(null);
     }
@@ -122,10 +148,11 @@ export default function AdminUsersPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="py-3 text-right space-x-1">
                         <Button
                           variant="ghost"
                           size="sm"
+                          title={user.is_admin ? "Убрать админа" : "Сделать админом"}
                           onClick={() => toggleAdmin(user.id, user.is_admin)}
                           disabled={processingId === user.id}
                         >
@@ -135,6 +162,19 @@ export default function AdminUsersPage() {
                             <ShieldOff className="h-4 w-4 text-red-500" />
                           ) : (
                             <Shield className="h-4 w-4 text-primary" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="Удалить пользователя"
+                          onClick={() => deleteUser(user.id, user.name)}
+                          disabled={processingId === user.id}
+                        >
+                          {processingId === user.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 text-destructive hover:text-red-700" />
                           )}
                         </Button>
                       </td>

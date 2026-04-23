@@ -573,6 +573,24 @@ async function handleBroadcast(req: VercelRequest, res: VercelResponse, supabase
   }
 }
 
+// POST /api/admin?action=delete-user
+async function handleDeleteUser(req: VercelRequest, res: VercelResponse, supabase: SupabaseClient) {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(200).json({ success: true });
+  } catch (e: any) {
+    return res.status(500).json({ error: e.message });
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -605,9 +623,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return handleGetUsers(req, res, supabase);
     case 'toggle-admin':
       return handleToggleAdmin(req, res, supabase);
+    case 'delete-user':
+      return handleDeleteUser(req, res, supabase);
     case 'broadcast':
       return handleBroadcast(req, res, supabase);
     default:
-      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update, get-tracks, archive-old-tracks, unarchive-track, archive-stats, get-users, toggle-admin, broadcast' });
+      return res.status(400).json({ error: 'Unknown action. Use: get-prices, update-price, delete-price, import-csv, batch-update, get-tracks, archive-old-tracks, unarchive-track, archive-stats, get-users, toggle-admin, delete-user, broadcast' });
   }
 }
