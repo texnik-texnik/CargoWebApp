@@ -180,7 +180,8 @@ export default function AdminArchivePage() {
           <CardContent>
             <div className="text-3xl font-bold">{stats?.activeByStatus?.delivered || 0}</div>
           </CardContent>
-        </div>
+        </Card>
+      </div>
 
       <Card className="mb-6">
         <CardHeader>

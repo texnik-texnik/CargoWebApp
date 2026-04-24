@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { AlertTriangle, Loader2 } from 'lucide-react';
+import { useAppLanguage } from '../hooks/useLanguage';
 
 interface Price {
   id: string;
@@ -12,9 +13,6 @@ interface Price {
   price: number;
   currency: string;
 }
-
-
-import { useAppLanguage } from '../hooks/useLanguage';
 
 export default function PricesPage() {
   const { t } = useAppLanguage();
