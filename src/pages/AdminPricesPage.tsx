@@ -19,7 +19,7 @@ interface Price {
 }
 
 export default function AdminPricesPage() {
-  const { t, lang } = useAppLanguage();
+  const { t } = useAppLanguage();
   const [prices, setPrices] = useState<Price[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
