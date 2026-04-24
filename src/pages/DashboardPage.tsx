@@ -18,7 +18,6 @@ export default function DashboardPage() {
 
   async function loadStats() {
     try {
-      // Use count queries instead of fetching all rows — critical for scalability
       const [tracksRes, deliveredRes, usersRes] = await Promise.all([
         supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('archived', false),
         supabase.from('tracks').select('*', { count: 'exact', head: true }).eq('archived', false).eq('status', 'delivered'),
@@ -40,7 +39,7 @@ export default function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
-      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Статистика</h2><p className="text-muted-foreground">Общая информация о системе</p></div>
+      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">{t.dashboard}</h2><p className="text-muted-foreground">{t.statsDesc}</p></div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
         {[
           { title: t.totalTracks, value: stats.totalTracks, icon: Package, color: 'text-blue-500' },
@@ -54,7 +53,7 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
-      <Card><CardHeader><CardTitle>Быстрые действия</CardTitle><CardDescription>Переход к основным разделам</CardDescription></CardHeader>
+      <Card><CardHeader><CardTitle>{t.quickActions}</CardTitle><CardDescription>{t.goToMain}</CardDescription></CardHeader>
         <CardContent>
           <div className="grid gap-2 sm:grid-cols-2">
             {[
@@ -64,7 +63,7 @@ export default function DashboardPage() {
             ].map((item) => (
               <Link key={item.href} to={item.href} className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent">
                 <div><p className="font-medium">{item.title}</p><p className="text-sm text-muted-foreground">{item.desc}</p></div>
-                <Badge variant="outline">Перейти</Badge>
+                <Badge variant="outline">{t.go}</Badge>
               </Link>
             ))}
           </div>

@@ -1,9 +1,8 @@
-'use client';
-
 import { Link } from 'react-router-dom';
 import { ChevronRight, Package } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Card, CardContent } from '../ui/card';
+import { useAppLanguage } from '../../hooks/useLanguage';
 
 interface TrackCardProps {
   track: {
@@ -25,23 +24,25 @@ const statusColors: Record<string, string> = {
   delivered: 'bg-emerald-500 hover:bg-emerald-600',
 };
 
-const statusLabels: Record<string, string> = {
-  waiting: 'Ожидание',
-  received: 'Получен',
-  intransit: 'В пути',
-  border: 'На границе',
-  warehouse: 'На складе',
-  payment: 'Оплата',
-  delivered: 'Доставлен',
-};
-
 export function TrackCard({ track }: TrackCardProps) {
+  const { t, lang } = useAppLanguage();
+
+  const statusLabels: Record<string, string> = {
+    waiting: t.waiting,
+    received: t.received,
+    intransit: t.intransit,
+    border: t.border,
+    warehouse: t.warehouse,
+    payment: t.payment,
+    delivered: t.delivered,
+  };
+
   const statusColor = statusColors[track.status] || 'bg-gray-500 hover:bg-gray-600';
   const statusLabel = statusLabels[track.status] || track.status;
 
   return (
     <Link
-      to={`/tracks/${track.id}`}
+      to={`/tracks?code=${track.code}`}
       className="block transition-all hover:scale-[1.02] active:scale-[0.98]"
     >
       <Card className="hover:shadow-md">
@@ -60,7 +61,7 @@ export function TrackCard({ track }: TrackCardProps) {
                 )}
                 {track.updated_at && (
                   <p className="text-xs text-muted-foreground">
-                    {new Date(track.updated_at).toLocaleDateString('ru-RU')}
+                    {new Date(track.updated_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB')}
                   </p>
                 )}
               </div>

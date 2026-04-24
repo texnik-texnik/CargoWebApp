@@ -11,7 +11,7 @@ interface Message { id: string; role: 'user' | 'assistant'; content: string; tim
 
 
 export default function AIChatPage() {
-  const { t } = useAppLanguage();
+  const { t, lang } = useAppLanguage();
   const [messages, setMessages] = useState<Message[]>([{ id: '1', role: 'assistant', content: t.aiGreeting, timestamp: new Date() }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export default function AIChatPage() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <Card className="h-[calc(100vh-8rem)] flex flex-col">
-        <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> AI-ассистент</CardTitle><CardDescription>Задайте вопрос</CardDescription></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> {t.aiAssistant}</CardTitle><CardDescription>{t.askQuestion}</CardDescription></CardHeader>
         <Separator />
         <CardContent className="flex-1 overflow-y-auto py-4">
           <div className="space-y-4">
@@ -45,7 +45,7 @@ export default function AIChatPage() {
                 {m.role === 'assistant' && <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></AvatarFallback></Avatar>}
                 <div className={`max-w-[70%] rounded-lg px-4 py-2 ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                   <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                  <p className="mt-1 text-xs opacity-70">{m.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="mt-1 text-xs opacity-70">{m.timestamp.toLocaleTimeString(lang === 'ru' ? 'ru-RU' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
                 {m.role === 'user' && <Avatar className="h-8 w-8"><AvatarFallback className="bg-secondary text-secondary-foreground"><User className="h-4 w-4" /></AvatarFallback></Avatar>}
               </div>
@@ -56,7 +56,7 @@ export default function AIChatPage() {
         </CardContent>
         <div className="border-t p-4">
           <div className="flex gap-2">
-            <Input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()} placeholder="Сообщение..." disabled={loading} className="flex-1" />
+            <Input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()} placeholder={t.messagePlaceholder} disabled={loading} className="flex-1" />
             <Button onClick={handleSend} disabled={loading || !input.trim()} size="icon">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}</Button>
           </div>
         </div>

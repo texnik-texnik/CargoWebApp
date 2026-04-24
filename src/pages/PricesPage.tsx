@@ -14,7 +14,10 @@ interface Price {
 }
 
 
+import { useAppLanguage } from '../hooks/useLanguage';
+
 export default function PricesPage() {
+  const { t } = useAppLanguage();
   const [prices, setPrices] = useState<Price[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,35 +40,35 @@ export default function PricesPage() {
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Тарифы</h2>
-        <p className="text-muted-foreground">Стоимость доставки Китай → Таджикистан</p>
+        <h2 className="text-2xl font-bold mb-2">{t.pricesTitle}</h2>
+        <p className="text-muted-foreground">{t.pricesSubtitle}</p>
       </div>
 
       <Card className="mb-4">
         <CardHeader>
-          <CardTitle>Базовые тарифы</CardTitle>
-          <CardDescription>Стоимость за 1 кг груза</CardDescription>
+          <CardTitle>{t.basePrices}</CardTitle>
+          <CardDescription>{t.perKgDesc}</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-              <span className="text-muted-foreground">Загрузка тарифов...</span>
+              <span className="text-muted-foreground">{t.loading}</span>
             </div>
           ) : prices.length > 0 ? (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Вес от</TableHead>
-                  <TableHead>Вес до</TableHead>
-                  <TableHead>Цена</TableHead>
+                  <TableHead>{t.priceWeightFrom}</TableHead>
+                  <TableHead>{t.priceWeightTo}</TableHead>
+                  <TableHead>{t.priceValue}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {prices.map((price) => (
                   <TableRow key={price.id}>
-                    <TableCell className="font-medium">{price.weight_from} кг</TableCell>
-                    <TableCell>{price.weight_to ? `${price.weight_to} кг` : '∞'}</TableCell>
+                    <TableCell className="font-medium">{price.weight_from} {t.unitKg}</TableCell>
+                    <TableCell>{price.weight_to ? `${price.weight_to} ${t.unitKg}` : '∞'}</TableCell>
                     <TableCell>
                       <Badge className="bg-green-500">{price.price} {price.currency}</Badge>
                     </TableCell>
@@ -74,16 +77,16 @@ export default function PricesPage() {
               </TableBody>
             </Table>
           ) : (
-            <p className="text-muted-foreground text-center py-4">Тарифы не настроены</p>
+            <p className="text-muted-foreground text-center py-4">{t.noPrices}</p>
           )}
         </CardContent>
       </Card>
 
       <Alert>
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Важно</AlertTitle>
+        <AlertTitle>{t.important}</AlertTitle>
         <AlertDescription>
-          Точная стоимость рассчитывается после взвешивания груза на складе в Китае.
+          {t.exactCostAlert}
         </AlertDescription>
       </Alert>
     </div>

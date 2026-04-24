@@ -66,7 +66,7 @@ export default function ProfilePage() {
           return;
         }
         
-        setError(`Ошибка: ${err.error || 'Не удалось загрузить профиль'}`);
+        setError(`Error: ${err.error || 'Failed to load profile'}`);
         setUserData({ phone: p, name: '', lang: 'ru' });
         return;
       }
@@ -88,7 +88,7 @@ export default function ProfilePage() {
         await loadMyTracks(data.history);
       }
     } catch (err: any) {
-      setError(`Ошибка загрузки: ${err.message || 'Неизвестная ошибка'}`);
+      setError(`Error: ${err.message || 'Unknown error'}`);
       // Fallback: показываем минимальный профиль
       setUserData({ phone: p, name: '', lang: 'ru' });
     }
@@ -124,7 +124,7 @@ export default function ProfilePage() {
       const langToSave = userData.lang || lang || 'ru';
       const telegramId = userData.telegram_id;
 
-      if (!telegramId) throw new Error('Telegram ID не найден');
+      if (!telegramId) throw new Error('Telegram ID not found');
       
       const response = await fetch('/api/auth/save-name', {
         method: 'POST',
@@ -139,7 +139,7 @@ export default function ProfilePage() {
       
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Ошибка сохранения');
+        throw new Error(err.error || 'Save error');
       }
 
       const result = await response.json();
@@ -151,10 +151,10 @@ export default function ProfilePage() {
       setPhone(updatedUserFromDb.phone);
       
       setEditing(false);
-      setSuccessMessage('✅ Профиль успешно сохранён!');
+      setSuccessMessage(t.profileSaved);
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error: any) {
-      setError(`Ошибка сохранения: ${error.message}`);
+      setError(`Error: ${error.message}`);
     }
     finally { setSaving(false); }
   }
@@ -171,7 +171,7 @@ export default function ProfilePage() {
       const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({ ...savedUser, name: pendingName.trim() }));
     } catch (error: any) {
-      setError('Не удалось сохранить имя');
+      setError(t.error);
     }
     finally { setSaving(false); }
   }
@@ -214,7 +214,15 @@ export default function ProfilePage() {
     catch (e) { /* ignore */ }
   };
 
-  const statusLabels: Record<string, string> = { waiting: 'Ожидание', received: 'Получен', intransit: 'В пути', border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен' };
+  const statusLabels: Record<string, string> = { 
+    waiting: t.waiting, 
+    received: t.received, 
+    intransit: t.intransit, 
+    border: t.border, 
+    warehouse: t.warehouse, 
+    payment: t.payment, 
+    delivered: t.delivered 
+  };
   const statusColors: Record<string, string> = { waiting: 'bg-yellow-500', received: 'bg-blue-500', intransit: 'bg-indigo-500', border: 'bg-orange-500', warehouse: 'bg-purple-500', payment: 'bg-green-500', delivered: 'bg-emerald-500' };
 
   // Не авторизован - показываем сообщение
@@ -223,8 +231,8 @@ export default function ProfilePage() {
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <User className="h-20 w-20 mb-4 text-muted-foreground" />
-          <h2 className="text-2xl font-bold mb-2">Войдите в профиль</h2>
-          <p className="text-muted-foreground mb-6">Для доступа к профилю необходимо авторизоваться через Telegram</p>
+          <h2 className="text-2xl font-bold mb-2">{t.loginToProfile}</h2>
+          <p className="text-muted-foreground mb-6">{t.loginToProfileDesc}</p>
           <Link to="/auth">
             <Button>{t.verify}</Button>
           </Link>
@@ -239,7 +247,7 @@ export default function ProfilePage() {
       <div className="container mx-auto px-4 py-6 max-w-2xl">
         <div className="flex flex-col items-center justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-          <p className="text-muted-foreground">Загрузка профиля...</p>
+          <p className="text-muted-foreground">{t.profileLoading}</p>
           {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
         </div>
       </div>
@@ -254,7 +262,7 @@ export default function ProfilePage() {
       {showErrorBanner && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-800 font-medium text-sm">⚠️ {error}</p>
-          <p className="text-red-600 text-xs mt-1">Профиль загружен в ограниченном режиме</p>
+          <p className="text-red-600 text-xs mt-1">{t.profileLimited}</p>
         </div>
       )}
       {successMessage && (
@@ -262,13 +270,13 @@ export default function ProfilePage() {
           <p className="text-green-800 font-medium text-sm">{successMessage}</p>
         </div>
       )}
-      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">{t.profileTitle}</h2><p className="text-muted-foreground">{userData?.client_id ? `Клиент: ${userData.client_id}` : t.profileDesc}</p></div>
+      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">{t.profileTitle}</h2><p className="text-muted-foreground">{userData?.client_id ? `${t.clientLabel}: ${userData.client_id}` : t.profileDesc}</p></div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">{t.profileTitle}</TabsTrigger>
           <TabsTrigger value="address">{t.warehouseAddress}</TabsTrigger>
-          <TabsTrigger value="tracks">Мои треки</TabsTrigger>
+          <TabsTrigger value="tracks">{t.myTracksTab}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -279,13 +287,13 @@ export default function ProfilePage() {
             </div>
           </CardContent></Card>
 
-          <Card><CardHeader><CardTitle>Информация профиля</CardTitle><CardDescription>Управляйте вашими персональными данными</CardDescription></CardHeader>
+          <Card><CardHeader><CardTitle>{t.profileInfo}</CardTitle><CardDescription>{t.profileInfoDesc}</CardDescription></CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div><Label htmlFor="name" className="flex items-center gap-2"><User className="h-4 w-4" /> Имя (латиницей)</Label>
+              <div><Label htmlFor="name" className="flex items-center gap-2"><User className="h-4 w-4" /> {t.nameLabel}</Label>
                 <Input id="name" value={userData?.name || ''} onChange={(e) => setUserData((prev: any) => ({ ...prev, name: e.target.value }))} disabled={!editing} placeholder="Ivan Ivanov" className="mt-2" /></div>
               <Separator />
-              <div><Label htmlFor="phone" className="flex items-center gap-2"><Phone className="h-4 w-4" /> Телефон</Label>
+              <div><Label htmlFor="phone" className="flex items-center gap-2"><Phone className="h-4 w-4" /> {t.phoneLabel}</Label>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-sm font-medium text-muted-foreground">+992</span>
                   <Input 
@@ -303,8 +311,8 @@ export default function ProfilePage() {
                 </div>
               </div>
               <Separator />
-              <div><Label htmlFor="language" className="flex items-center gap-2"><Globe className="h-4 w-4" /> Язык</Label>
-                <Select value={lang} onValueChange={(val) => setLang(val as 'ru' | 'tj')} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">Русский</SelectItem><SelectItem value="tj">Тоҷикӣ</SelectItem></SelectContent></Select></div>
+              <div><Label htmlFor="language" className="flex items-center gap-2"><Globe className="h-4 w-4" /> {t.langLabel}</Label>
+                <Select value={lang} onValueChange={(val) => setLang(val as 'ru' | 'tj')} disabled={!editing}><SelectTrigger id="language" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="ru">{t.russian}</SelectItem><SelectItem value="tj">{t.tajik}</SelectItem></SelectContent></Select></div>
             </div>
             <div className="mt-6 flex gap-2">
               {editing ? (<><Button onClick={handleSave} disabled={saving} className="flex-1"><Save className="mr-2 h-4 w-4" />{saving ? t.saving : t.saveBtn}</Button><Button variant="outline" onClick={() => setEditing(false)}>{t.cancelBtn}</Button></>)
@@ -312,11 +320,11 @@ export default function ProfilePage() {
             </div>
           </CardContent></Card>
 
-          <Button variant="destructive" onClick={handleLogout} className="mt-6 w-full"><LogOut className="mr-2 h-4 w-4" /> Выйти</Button>
+          <Button variant="destructive" onClick={handleLogout} className="mt-6 w-full"><LogOut className="mr-2 h-4 w-4" /> {t.logout}</Button>
         </TabsContent>
 
         <TabsContent value="address">
-          <Card><CardHeader><CardTitle>Адрес склада в Китае</CardTitle><CardDescription>Используйте этот адрес для доставки грузов</CardDescription></CardHeader>
+          <Card><CardHeader><CardTitle>{t.chinaAddrTitle}</CardTitle><CardDescription>{t.chinaAddrDesc}</CardDescription></CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-muted p-4 font-mono text-sm space-y-2">
               <p><span className="text-muted-foreground">联系人：</span>khuroson-cargo</p>
@@ -324,25 +332,25 @@ export default function ProfilePage() {
               <p><span className="text-muted-foreground">收货地址：</span>{chinaAddress}</p>
             </div>
             <Button onClick={copyAddress} className="w-full" variant="outline">
-              {copied ? <><Check className="mr-2 h-4 w-4" /> Скопировано!</> : <><Copy className="mr-2 h-4 w-4" /> Копировать адрес</>}
+              {copied ? <><Check className="mr-2 h-4 w-4" /> {t.copied}</> : <><Copy className="mr-2 h-4 w-4" /> {t.copyAddress}</>}
             </Button>
           </CardContent></Card>
         </TabsContent>
 
         <TabsContent value="tracks">
-          <Card><CardHeader><CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> Мои треки</CardTitle><CardDescription>Треки которые вы искали недавно</CardDescription></CardHeader>
+          <Card><CardHeader><CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" /> {t.myTracksTitle}</CardTitle><CardDescription>{t.myTracksDesc}</CardDescription></CardHeader>
           <CardContent>
             {loadingTracks ? <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
               : myTracks.length > 0 ? <div className="space-y-2">
                 {myTracks.map((track) => (
                   <Link key={track.id} to={`/tracks?code=${track.code}`}>
                     <div className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-accent cursor-pointer">
-                      <div><p className="font-semibold">{track.code}</p><p className="text-sm text-muted-foreground">{track.updated_at ? new Date(track.updated_at).toLocaleDateString('ru-RU') : ''}</p></div>
+                      <div><p className="font-semibold">{track.code}</p><p className="text-sm text-muted-foreground">{track.updated_at ? new Date(track.updated_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB') : ''}</p></div>
                       <div className="flex items-center gap-2"><Badge className={`${statusColors[track.status] || 'bg-gray-500'} text-white`}>{statusLabels[track.status] || track.status}</Badge><ChevronRight className="h-5 w-5 text-muted-foreground" /></div>
                     </div>
                   </Link>
                 ))}</div>
-              : <div className="py-8 text-center"><Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" /><h3 className="text-lg font-semibold mb-2">У вас пока нет треков</h3><Link to="/tracks"><Button>{t.findTrack}</Button></Link></div>}
+              : <div className="py-8 text-center"><Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground" /><h3 className="text-lg font-semibold mb-2">{t.noTracksYet}</h3><Link to="/tracks"><Button>{t.findTrack}</Button></Link></div>}
           </CardContent></Card>
         </TabsContent>
       </Tabs>
@@ -351,9 +359,9 @@ export default function ProfilePage() {
       <Dialog open={showNamePrompt} onOpenChange={setShowNamePrompt}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>👋 Добро пожаловать!</DialogTitle>
+            <DialogTitle>{t.welcomeTitle}</DialogTitle>
             <DialogDescription>
-              Для полного доступа к профилю пожалуйста введите ваше имя латиницей
+              {t.namePromptDesc}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -366,7 +374,7 @@ export default function ProfilePage() {
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Имя будет использоваться для генерации адреса склада в Китае
+                {t.chinaAddrDescLong}
               </AlertDescription>
             </Alert>
           </div>

@@ -9,26 +9,6 @@ import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
-const statusLabels: Record<string, string> = {
-  waiting: 'Ожидание',
-  received: 'Получен',
-  intransit: 'В пути',
-  border: 'На границе',
-  warehouse: 'На складе',
-  payment: 'Оплата',
-  delivered: 'Доставлен',
-};
-
-const statusColors: Record<string, string> = {
-  waiting: 'bg-gray-100 text-gray-800',
-  received: 'bg-blue-100 text-blue-800',
-  intransit: 'bg-orange-100 text-orange-800',
-  border: 'bg-yellow-100 text-yellow-800',
-  warehouse: 'bg-purple-100 text-purple-800',
-  payment: 'bg-green-100 text-green-800',
-  delivered: 'bg-emerald-100 text-emerald-800',
-};
-
 interface Track {
   id: string;
   code: string;
@@ -43,7 +23,7 @@ interface Track {
 }
 
 export default function AdminDatabasePage() {
-  const { t } = useAppLanguage();
+  const { t, lang } = useAppLanguage();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -52,6 +32,26 @@ export default function AdminDatabasePage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const limit = 50;
+
+  const statusLabels: Record<string, string> = {
+    waiting: t.waiting,
+    received: t.received,
+    intransit: t.intransit,
+    border: t.border,
+    warehouse: t.warehouse,
+    payment: t.payment,
+    delivered: t.delivered,
+  };
+
+  const statusColors: Record<string, string> = {
+    waiting: 'bg-gray-100 text-gray-800',
+    received: 'bg-blue-100 text-blue-800',
+    intransit: 'bg-orange-100 text-orange-800',
+    border: 'bg-yellow-100 text-yellow-800',
+    warehouse: 'bg-purple-100 text-purple-800',
+    payment: 'bg-green-100 text-green-800',
+    delivered: 'bg-emerald-100 text-emerald-800',
+  };
 
   const fetchTracks = async () => {
     setLoading(true);
@@ -84,21 +84,17 @@ export default function AdminDatabasePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, statusFilter]);
 
-  // Debounced search — prevents excessive API calls while typing
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearch(value);
-    // Clear previous timer
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    // Debounce: wait 300ms after last change, then reset page and fetch
     searchTimerRef.current = setTimeout(() => {
       setPage(1);
     }, 300);
   }, []);
 
   useEffect(() => {
-    // Trigger fetch when page changes (search change triggers via page reset)
     fetchTracks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
@@ -109,7 +105,18 @@ export default function AdminDatabasePage() {
     fetchTracks();
   };
 
-  // Memoize formatted dates to avoid 250 Date allocations per render (5 date columns × 50 rows)
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const formattedTracks = useMemo(() =>
     tracks.map(t => ({
       ...t,
@@ -120,19 +127,7 @@ export default function AdminDatabasePage() {
       _delivered: formatDate(t.delivered_date),
     })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tracks]);
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '—';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+    [tracks, lang]);
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl">
@@ -141,17 +136,15 @@ export default function AdminDatabasePage() {
         <p className="text-muted-foreground">{t.databaseDesc}</p>
       </div>
 
-      {/* Stats Card */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
             {t.manageTracks}
           </CardTitle>
-          <CardDescription>{total} треков в базе данных</CardDescription>
+          <CardDescription>{t.tracksInDb.replace('{count}', String(total))}</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Search and Filter */}
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -183,7 +176,6 @@ export default function AdminDatabasePage() {
             </Button>
           </form>
 
-          {/* Tracks Table */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -199,7 +191,7 @@ export default function AdminDatabasePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px]">{t.trackingCode}</TableHead>
-                    <TableHead className="w-[120px]">{t.status}</TableHead>
+                    <TableHead className="w-[120px]">{t.statusLabel}</TableHead>
                     <TableHead className="w-[180px]">{t.receivedDate}</TableHead>
                     <TableHead className="w-[180px]">{t.intransitDate}</TableHead>
                     <TableHead className="w-[180px]">{t.borderDate}</TableHead>
@@ -255,11 +247,10 @@ export default function AdminDatabasePage() {
             </div>
           )}
 
-          {/* Pagination */}
           {!loading && tracks.length > 0 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Показано {tracks.length} из {total}
+                {t.shownOf.replace('{count}', String(tracks.length)).replace('{total}', String(total))}
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -271,7 +262,7 @@ export default function AdminDatabasePage() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="text-sm">
-                  Страница {page} из {totalPages}
+                  {t.page.replace('{current}', String(page)).replace('{total}', String(totalPages))}
                 </span>
                 <Button
                   variant="outline"

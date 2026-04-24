@@ -73,8 +73,8 @@ export default function HomePage() {
     border: 'bg-orange-500', warehouse: 'bg-purple-500', payment: 'bg-green-500', delivered: 'bg-emerald-500',
   };
   const statusLabels: Record<string, string> = {
-    waiting: 'Ожидание', received: 'Получен', intransit: 'В пути',
-    border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен',
+    waiting: t.waiting, received: t.received, intransit: t.intransit,
+    border: t.border, warehouse: t.warehouse, payment: t.payment, delivered: t.delivered,
   };
 
   if (loading) {
@@ -92,7 +92,7 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <Card className="mb-6 bg-gradient-to-br from-primary to-primary/80 text-white border-0">
         <CardHeader>
-          <CardTitle className="text-2xl">{t.welcome}, {user?.name || user?.first_name || 'Пользователь'}! 👋</CardTitle>
+          <CardTitle className="text-2xl">{t.welcome}, {user?.name || user?.first_name || t.user}! 👋</CardTitle>
           <CardDescription className="text-white/90">{t.trackCargo}</CardDescription>
         </CardHeader>
       </Card>

@@ -110,23 +110,33 @@ export default function TracksPage() {
     else localStorage.removeItem('track_history');
   }
 
+  const statusLabels: Record<string, string> = { 
+    waiting: t.waiting, 
+    received: t.received, 
+    intransit: t.intransit, 
+    border: t.border, 
+    warehouse: t.warehouse, 
+    payment: t.payment, 
+    delivered: t.delivered 
+  };
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
       <Card className="mb-6">
-        <CardHeader><CardTitle>{t.trackSearch}</CardTitle><CardDescription>Введите трек-номер для отслеживания</CardDescription></CardHeader>
+        <CardHeader><CardTitle>{t.trackSearch}</CardTitle><CardDescription>{t.enterTrackNumber}</CardDescription></CardHeader>
         <CardContent>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input value={searchCode} onChange={(e) => setSearchCode(e.target.value.toUpperCase())}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchCode)} placeholder="Введите трек-номер..." className="pl-10" />
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchCode)} placeholder={t.trackNumberPlaceholder} className="pl-10" />
             </div>
             <Button onClick={() => handleSearch(searchCode)} disabled={loading || !searchCode.trim()}>
               {loading ? '...' : t.search}
             </Button>
           </div>
           <Button variant="outline" className="mt-2 w-full" disabled>
-            <ScanLine className="mr-2 h-4 w-4" /> Сканировать фото (AI)
+            <ScanLine className="mr-2 h-4 w-4" /> {t.scanPhoto}
           </Button>
         </CardContent>
       </Card>
@@ -135,7 +145,7 @@ export default function TracksPage() {
 
       {searchResults.length > 0 && (
         <div className="mb-6">
-          <h3 className="mb-3 text-lg font-semibold">Найдено: {searchResults.length}</h3>
+          <h3 className="mb-3 text-lg font-semibold">{t.foundResults.replace('{count}', String(searchResults.length))}</h3>
           <div className="space-y-2">
             {searchResults.map((track) => (
               <Link key={track.id} to={`/tracks?code=${track.code}`}>
@@ -145,9 +155,9 @@ export default function TracksPage() {
                       <div>
                         <p className="font-semibold">{track.code}</p>
                         {track.notes && <p className="text-sm text-muted-foreground line-clamp-1">{track.notes}</p>}
-                        {track.updated_at && <p className="text-xs text-muted-foreground">{new Date(track.updated_at).toLocaleDateString('ru-RU')}</p>}
+                        {track.updated_at && <p className="text-xs text-muted-foreground">{new Date(track.updated_at).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB')}</p>}
                       </div>
-                      <Badge className="text-white bg-primary">{track.status}</Badge>
+                      <Badge className="text-white bg-primary">{statusLabels[track.status] || track.status}</Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -160,8 +170,8 @@ export default function TracksPage() {
       {searchCode && searchResults.length === 0 && !loading && (
         <Card><CardContent className="pt-6 text-center">
           <Search className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-semibold">Ничего не найдено</h3>
-          <p className="text-sm text-muted-foreground">Проверьте правильность введенного кода</p>
+          <h3 className="mb-2 text-lg font-semibold">{t.nothingFound}</h3>
+          <p className="text-sm text-muted-foreground">{t.checkCode}</p>
         </CardContent></Card>
       )}
 
@@ -169,7 +179,7 @@ export default function TracksPage() {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base"><History className="h-5 w-5" /> История поиска</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base"><History className="h-5 w-5" /> {t.searchHistory}</CardTitle>
               <Button variant="ghost" size="sm" onClick={clearHistory}><X className="h-4 w-4" /></Button>
             </div>
           </CardHeader>

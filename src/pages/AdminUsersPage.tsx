@@ -61,7 +61,8 @@ export default function AdminUsersPage() {
   };
 
   const deleteUser = async (userId: string, userName: string) => {
-    if (!window.confirm(`Вы уверены, что хотите удалить пользователя ${userName || 'без имени'}? Это действие необратимо.`)) {
+    const confirmMsg = t.deleteUserConfirm.replace('{name}', userName || t.noName);
+    if (!window.confirm(confirmMsg)) {
       return;
     }
 
@@ -76,11 +77,11 @@ export default function AdminUsersPage() {
       if (data.success) {
         setUsers(users.filter(u => u.id !== userId));
       } else {
-        alert(data.error || 'Ошибка при удалении пользователя');
+        alert(data.error || t.error);
       }
     } catch (e) {
       console.error('Error deleting user:', e);
-      alert('Произошла ошибка при удалении');
+      alert(t.error);
     } finally {
       setProcessingId(null);
     }
@@ -93,10 +94,10 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <div className="container mx-auto px-4 py-6 max-4xl">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">{t.users}</h2>
-        <p className="text-muted-foreground">{t.usersDesc}</p>
+        <h2 className="text-2xl font-bold mb-2">{t.adminUsersTitle}</h2>
+        <p className="text-muted-foreground">{t.adminUsersDesc}</p>
       </div>
 
       <Card className="mb-6">
@@ -104,7 +105,7 @@ export default function AdminUsersPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={t.searchByCode || "Поиск пользователя..."}
+              placeholder={t.searchByCode}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -121,17 +122,17 @@ export default function AdminUsersPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left font-medium text-muted-foreground">
-                    <th className="pb-3 pr-4">Имя / ID</th>
-                    <th className="pb-3 pr-4">Телефон</th>
-                    <th className="pb-3 pr-4 text-center">Статус</th>
-                    <th className="pb-3 text-right">Действия</th>
+                    <th className="pb-3 pr-4">{t.nameId}</th>
+                    <th className="pb-3 pr-4">{t.phoneLabel}</th>
+                    <th className="pb-3 pr-4 text-center">{t.statusLabel}</th>
+                    <th className="pb-3 text-right">{t.actionsLabel}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {filteredUsers.map((user) => (
                     <tr key={user.id} className="group">
                       <td className="py-3 pr-4">
-                        <div className="font-medium">{user.name || 'Без имени'}</div>
+                        <div className="font-medium">{user.name || t.noName}</div>
                         <div className="text-xs text-muted-foreground">ID: {user.telegram_id}</div>
                       </td>
                       <td className="py-3 pr-4">
@@ -140,11 +141,11 @@ export default function AdminUsersPage() {
                       <td className="py-3 pr-4 text-center">
                         {user.is_admin ? (
                           <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                            Админ
+                            {t.admin}
                           </span>
                         ) : (
                           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                            Юзер
+                            {t.user}
                           </span>
                         )}
                       </td>
@@ -152,7 +153,7 @@ export default function AdminUsersPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          title={user.is_admin ? "Убрать админа" : "Сделать админом"}
+                          title={user.is_admin ? t.edit : t.admin}
                           onClick={() => toggleAdmin(user.id, user.is_admin)}
                           disabled={processingId === user.id}
                         >
@@ -167,7 +168,7 @@ export default function AdminUsersPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          title="Удалить пользователя"
+                          title={t.deletePrice}
                           onClick={() => deleteUser(user.id, user.name)}
                           disabled={processingId === user.id}
                         >
@@ -183,7 +184,7 @@ export default function AdminUsersPage() {
                   {filteredUsers.length === 0 && (
                     <tr>
                       <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                        Пользователи не найдены
+                        {t.noTracksFound}
                       </td>
                     </tr>
                   )}

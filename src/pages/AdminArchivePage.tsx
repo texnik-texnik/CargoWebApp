@@ -9,11 +9,6 @@ import { Badge } from '../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 
-const statusLabels: Record<string, string> = {
-  waiting: 'Ожидание', received: 'Получен', intransit: 'В пути',
-  border: 'На границе', warehouse: 'На складе', payment: 'Оплата', delivered: 'Доставлен',
-};
-
 interface Track {
   id: string;
   code: string;
@@ -30,7 +25,7 @@ interface ArchiveStats {
 }
 
 export default function AdminArchivePage() {
-  const { t } = useAppLanguage();
+  const { t, lang } = useAppLanguage();
   const [stats, setStats] = useState<ArchiveStats | null>(null);
   const [archivedTracks, setArchivedTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,6 +36,16 @@ export default function AdminArchivePage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 30;
+
+  const statusLabels: Record<string, string> = {
+    waiting: t.waiting,
+    received: t.received,
+    intransit: t.intransit,
+    border: t.border,
+    warehouse: t.warehouse,
+    payment: t.payment,
+    delivered: t.delivered,
+  };
 
   const loadStats = async () => {
     try {
@@ -80,15 +85,12 @@ export default function AdminArchivePage() {
     loadStats();
   }, []);
 
-  // Debounced search — prevents excessive API calls while typing
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    // Clear previous timer
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-    // Debounce: wait 300ms after last search input change
     searchTimerRef.current = setTimeout(() => {
-      setPage(1); // Reset to page 1 when search changes
+      setPage(1);
     }, 300);
 
     return () => {
@@ -102,8 +104,8 @@ export default function AdminArchivePage() {
   }, [page, search]);
 
   const handleArchiveOld = async () => {
-    // Confirmation dialog to prevent accidental mass archiving
-    if (!window.confirm('Архивировать все ДОСТАВЛЕННЫЕ треки старше 4 месяцев? Это действие можно отменить.')) return;
+    const confirmMsg = lang === 'tj' ? 'Ҳамаи трекҳои РАСОНИДАШУДАИ аз 4 моҳ кӯҳнаро ба архив мебаред? Ин амалро бекор кардан мумкин аст.' : 'Архивировать все ДОСТАВЛЕННЫЕ треки старше 4 месяцев? Это действие можно отменить.';
+    if (!window.confirm(confirmMsg)) return;
 
     setArchiving(true); setError(null); setResult(null);
     try {
@@ -140,13 +142,9 @@ export default function AdminArchivePage() {
     }
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-  };
-
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '—';
-    return new Date(dateStr).toLocaleDateString('ru-RU', {
+    return new Date(dateStr).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'en-GB', {
       day: '2-digit', month: '2-digit', year: 'numeric',
     });
   };
@@ -158,7 +156,6 @@ export default function AdminArchivePage() {
         <p className="text-muted-foreground">{t.archiveDesc}</p>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-3">
@@ -183,10 +180,8 @@ export default function AdminArchivePage() {
           <CardContent>
             <div className="text-3xl font-bold">{stats?.activeByStatus?.delivered || 0}</div>
           </CardContent>
-        </Card>
-      </div>
+        </div>
 
-      {/* Archive Action */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -226,21 +221,19 @@ export default function AdminArchivePage() {
         </CardContent>
       </Card>
 
-      {/* Archived Tracks Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
             {t.archivedList}
           </CardTitle>
-          <CardDescription>{archivedTracks.length} треков в архиве</CardDescription>
+          <CardDescription>{t.tracksInDb.replace('{count}', String(archivedTracks.length)).replace('базе данных', 'архиве').replace('пойгоҳи додаҳо', 'архив')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Search with debounce */}
           <div className="mb-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input value={search} onChange={handleSearchChange} placeholder={t.searchArchive} className="pl-10" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t.searchArchive} className="pl-10" />
             </div>
           </div>
 
@@ -259,10 +252,10 @@ export default function AdminArchivePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[180px]">{t.trackingCode}</TableHead>
-                    <TableHead className="w-[120px]">{t.status}</TableHead>
+                    <TableHead className="w-[120px]">{t.statusLabel}</TableHead>
                     <TableHead className="w-[140px]">{t.intransitDate}</TableHead>
                     <TableHead className="w-[140px]">{t.archivedAt}</TableHead>
-                    <TableHead className="w-[100px]">{t.actions}</TableHead>
+                    <TableHead className="w-[100px]">{t.actionsLabel}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -295,11 +288,10 @@ export default function AdminArchivePage() {
             </div>
           )}
 
-          {/* Pagination */}
           {!loading && archivedTracks.length > 0 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Показано {archivedTracks.length} треков
+                {t.shownOf.replace('{count}', String(archivedTracks.length)).replace('{total}', String(archivedTracks.length))}
               </p>
               <div className="flex items-center gap-2">
                 <Button

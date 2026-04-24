@@ -32,10 +32,10 @@ export default function AdminBroadcastPage() {
         setResult({ sent: data.sent, errors: data.errors });
         setMessage('');
       } else {
-        setError(data.error || 'Произошла ошибка при отправке');
+        setError(data.error || t.error);
       }
     } catch (e) {
-      setError('Ошибка сети или сервера');
+      setError(t.error);
     } finally {
       setLoading(false);
     }
@@ -50,16 +50,15 @@ export default function AdminBroadcastPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Новое сообщение</CardTitle>
+          <CardTitle className="text-lg">{t.adminBroadcastTitle}</CardTitle>
           <CardDescription>
-            Сообщение будет отправлено всем пользователям, которые взаимодействовали с ботом. 
-            Можно использовать HTML-теги (b, i, a).
+            {t.adminBroadcastDesc}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Textarea
-              placeholder="Введите текст сообщения..."
+              placeholder={t.msgPlaceholder}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="min-h-[200px]"
@@ -78,8 +77,8 @@ export default function AdminBroadcastPage() {
             <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-600">
               <CheckCircle className="h-4 w-4" />
               <span>
-                Отправлено: <strong>{result.sent}</strong>. 
-                Ошибок: <strong>{result.errors}</strong>.
+                {t.sentCount.replace('{count}', String(result.sent))}. 
+                {t.errorCount.replace('{count}', String(result.errors))}.
               </span>
             </div>
           )}
@@ -92,7 +91,7 @@ export default function AdminBroadcastPage() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Отправка...
+                {t.sending}
               </>
             ) : (
               <>

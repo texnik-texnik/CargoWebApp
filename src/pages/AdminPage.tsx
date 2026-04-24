@@ -17,7 +17,7 @@ export default function AdminPage() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-2xl">
-      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">Админ-панель</h2><p className="text-muted-foreground">Управление системой доставки</p></div>
+      <div className="mb-6"><h2 className="text-2xl font-bold mb-2">{t.adminPanel}</h2><p className="text-muted-foreground">{t.adminDesc}</p></div>
       <div className="space-y-4">
         {sections.map((s) => (
           <Link key={s.href} to={s.href}>

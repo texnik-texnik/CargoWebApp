@@ -6,8 +6,10 @@ import { Truck, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { useAppLanguage } from '../../hooks/useLanguage';
 
 export function Header() {
+  const { t } = useAppLanguage();
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function Header() {
                   </AvatarFallback>
                 </Avatar>
                 <Badge variant="secondary" className="text-xs">
-                  {user.client_id || user.first_name || 'Войти'}
+                  {user.client_id || user.first_name || t.verify}
                 </Badge>
               </div>
             </Link>
@@ -49,7 +51,7 @@ export function Header() {
             <Link to="/auth">
               <Button variant="secondary" size="sm">
                 <User className="mr-2 h-4 w-4" />
-                Войти
+                {t.verify}
               </Button>
             </Link>
           )}
