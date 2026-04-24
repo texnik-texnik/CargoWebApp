@@ -18,9 +18,8 @@ interface Price {
   currency: string;
 }
 
-
 export default function AdminPricesPage() {
-  const { t } = useAppLanguage();
+  const { t, lang } = useAppLanguage();
   const [prices, setPrices] = useState<Price[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +68,7 @@ export default function AdminPricesPage() {
       });
 
       if (response.ok) {
-        setSuccess('Price updated!');
+        setSuccess(t.priceUpdated);
         setEditing(null);
         setTimeout(() => setSuccess(null), 3000);
         loadPrices();
@@ -83,7 +82,7 @@ export default function AdminPricesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Delete this price?')) return;
+    if (!window.confirm(t.deletePriceConfirm)) return;
     try {
       const response = await authenticatedFetch('/api/admin?action=delete-price', {
         method: 'DELETE',
@@ -91,7 +90,7 @@ export default function AdminPricesPage() {
       });
 
       if (response.ok) {
-        setSuccess('Price deleted!');
+        setSuccess(t.priceDeleted);
         setTimeout(() => setSuccess(null), 3000);
         loadPrices();
       }
@@ -121,7 +120,7 @@ export default function AdminPricesPage() {
       });
 
       if (response.ok) {
-        setSuccess('Price added!');
+        setSuccess(t.priceAdded);
         setAdding(false);
         setNewData({ weight_from: '', weight_to: '', price: '' });
         setTimeout(() => setSuccess(null), 3000);
@@ -142,8 +141,8 @@ export default function AdminPricesPage() {
           <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>
         </Link>
         <div>
-          <h2 className="text-2xl font-bold">Управление ценами</h2>
-          <p className="text-muted-foreground">Редактируйте тарифы на доставку</p>
+          <h2 className="text-2xl font-bold">{t.managePricesTitle}</h2>
+          <p className="text-muted-foreground">{t.managePricesSubtitle}</p>
         </div>
       </div>
 
@@ -154,27 +153,27 @@ export default function AdminPricesPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Тарифы</CardTitle>
-              <CardDescription>Актуальные цены на доставку</CardDescription>
+              <CardTitle>{t.pricesTitle}</CardTitle>
+              <CardDescription>{t.activePrices}</CardDescription>
             </div>
             {!adding && (
               <Button size="sm" onClick={() => setAdding(true)}>
-                <Plus className="h-4 w-4 mr-1" /> Добавить
+                <Plus className="h-4 w-4 mr-1" /> {t.addPrice}
               </Button>
             )}
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
+            <div className="text-center py-8 text-muted-foreground">{t.loading}</div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Вес от</TableHead>
-                  <TableHead>Вес до</TableHead>
-                  <TableHead>Цена</TableHead>
-                  <TableHead>Действия</TableHead>
+                  <TableHead>{t.priceWeightFrom}</TableHead>
+                  <TableHead>{t.priceWeightTo}</TableHead>
+                  <TableHead>{t.priceValue}</TableHead>
+                  <TableHead>{t.actionsLabel}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -194,8 +193,8 @@ export default function AdminPricesPage() {
                       </>
                     ) : (
                       <>
-                        <TableCell>{price.weight_from} кг</TableCell>
-                        <TableCell>{price.weight_to ? `${price.weight_to} кг` : '∞'}</TableCell>
+                        <TableCell>{price.weight_from} {t.unitKg}</TableCell>
+                        <TableCell>{price.weight_to ? `${price.weight_to} ${t.unitKg}` : '∞'}</TableCell>
                         <TableCell><Badge>{price.price} {price.currency}</Badge></TableCell>
                         <TableCell>
                           <div className="flex gap-1">
