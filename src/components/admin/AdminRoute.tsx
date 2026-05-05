@@ -41,11 +41,11 @@ export default function AdminRoute({ children }: AdminRouteProps) {
       // Проверяем роль в базе данных
       const { data, error } = await supabase
         .from('users')
-        .select('role')
+        .select('is_admin')
         .eq('phone', phone)
         .single();
 
-      if (error || !data || data.role !== 'admin') {
+      if (error || !data || data.is_admin !== true) {
         setIsAdmin(false);
       } else {
         setIsAdmin(true);

@@ -12,17 +12,23 @@ CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   telegram_id VARCHAR(50) UNIQUE NOT NULL,
   client_id VARCHAR(50),
+  username VARCHAR(100),
   name VARCHAR(100) NOT NULL,
   phone VARCHAR(50) NOT NULL,
   lang VARCHAR(10) DEFAULT 'ru',
+  is_admin BOOLEAN DEFAULT FALSE,
+  verification_code VARCHAR(4),
+  verification_expires TIMESTAMP WITH TIME ZONE,
+  telegram_chat_id VARCHAR(100),
   history TEXT DEFAULT '',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for faster lookups
+-- Indices for faster lookups
 CREATE INDEX idx_users_telegram_id ON users(telegram_id);
 CREATE INDEX idx_users_client_id ON users(client_id);
+CREATE INDEX idx_users_phone ON users(phone);
 
 -- =====================================================
 -- TRACKS TABLE
@@ -37,13 +43,30 @@ CREATE TABLE tracks (
   warehouse_date TIMESTAMP WITH TIME ZONE,
   delivered_date TIMESTAMP WITH TIME ZONE,
   notes TEXT DEFAULT '',
+  archived BOOLEAN DEFAULT FALSE,
+  archived_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for faster lookups
+-- Indices for faster lookups
 CREATE INDEX idx_tracks_code ON tracks(code);
 CREATE INDEX idx_tracks_status ON tracks(status);
+CREATE INDEX idx_tracks_archived_intransit ON tracks (archived, intransit_date DESC);
+CREATE INDEX idx_tracks_archived_at ON tracks (archived_at DESC);
+
+-- =====================================================
+-- PRICES TABLE
+-- =====================================================
+CREATE TABLE prices (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  weight_from DECIMAL(10,2) NOT NULL,
+  weight_to DECIMAL(10,2),
+  price DECIMAL(10,2) NOT NULL,
+  currency TEXT DEFAULT 'сомони',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
 -- =====================================================
 -- NOTIFICATIONS TABLE
@@ -58,7 +81,7 @@ CREATE TABLE notifications (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for faster lookups
+-- Indices for faster lookups
 CREATE INDEX idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX idx_notifications_status ON notifications(status);
 
@@ -76,7 +99,7 @@ CREATE TABLE broadcast_logs (
   completed_at TIMESTAMP WITH TIME ZONE
 );
 
--- Index for faster lookups
+-- Indices for faster lookups
 CREATE INDEX idx_broadcast_logs_admin_id ON broadcast_logs(admin_id);
 CREATE INDEX idx_broadcast_logs_status ON broadcast_logs(status);
 
@@ -102,6 +125,11 @@ CREATE TRIGGER update_tracks_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_prices_updated_at
+  BEFORE UPDATE ON prices
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
 -- =====================================================
 -- ROW LEVEL SECURITY (RLS)
 -- =====================================================
@@ -109,15 +137,15 @@ CREATE TRIGGER update_tracks_updated_at
 -- Enable RLS on all tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tracks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE prices ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE broadcast_logs ENABLE ROW LEVEL SECURITY;
 
--- Users can read their own data
+-- Policies for Users
 CREATE POLICY "Users can view own data"
   ON users FOR SELECT
   USING (telegram_id = current_setting('app.current_telegram_id', true));
 
--- Users can update their own data
 CREATE POLICY "Users can update own data"
   ON users FOR UPDATE
   USING (telegram_id = current_setting('app.current_telegram_id', true));
@@ -127,24 +155,14 @@ CREATE POLICY "Tracks are public"
   ON tracks FOR SELECT
   USING (true);
 
+-- Prices are public (read-only)
+CREATE POLICY "Prices are public"
+  ON prices FOR SELECT
+  USING (true);
+
 -- Notifications are user-specific
 CREATE POLICY "Users can view own notifications"
   ON notifications FOR SELECT
   USING (user_id IN (
     SELECT id FROM users WHERE telegram_id = current_setting('app.current_telegram_id', true)
   ));
-
--- =====================================================
--- MIGRATION DATA FROM GOOGLE SHEETS
--- =====================================================
--- После импорта данных из Google Sheets, выполните:
--- 
--- INSERT INTO users (telegram_id, client_id, name, phone, lang, history)
--- VALUES 
---   ('123456789', 'KH-001', 'Имя Фамилия', '+992901234567', 'ru', 'TRACK001,TRACK002'),
---   ...
---
--- INSERT INTO tracks (code, status, notes)
--- VALUES 
---   ('TRACK001', 'intransit', 'Груз в пути'),
---   ...

@@ -53,15 +53,12 @@
 ```
 webapp-react/
 ├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── page.tsx           ✅ Главная (Dashboard)
-│   │   ├── tracks/            ✅ Поиск треков
-│   │   ├── profile/           ✅ Профиль
-│   │   ├── ai-chat/           ✅ AI-ассистент
-│   │   └── api/               ✅ API маршруты
+│   ├── App.tsx                ✅ Маршрутизация (CRA)
+│   ├── pages/                 ✅ Страницы приложения
 │   ├── components/            ✅ React компоненты
-│   ├── lib/supabase/          ✅ Supabase клиент
-│   └── hooks/, contexts/      ⏳ В разработке
+│   ├── lib/                   ✅ Утилиты и Supabase клиент
+│   └── hooks/, contexts/      ✅ Логика и состояние
+├── api/                       ✅ Vercel Serverless Functions
 ├── database/
 │   ├── schema.sql             ✅ Полная схема БД
 │   └── migration-from-sheets.sql ✅ Миграция
@@ -78,13 +75,13 @@ webapp-react/
 
 | Категория | Технология | Статус |
 |-----------|-------------|--------|
-| **Фреймворк** | Next.js 16 (App Router) | ✅ |
+| **Фреймворк** | React 19 (CRA) | ✅ |
 | **Язык** | TypeScript | ✅ |
-| **Стилизация** | TailwindCSS v4 | ✅ |
-| **UI компоненты** | shadcn/ui | ⏳ Нужно установить |
+| **Стилизация** | TailwindCSS v3 | ✅ |
+| **UI компоненты** | shadcn/ui | ✅ Установлено |
 | **База данных** | Supabase (PostgreSQL) | ✅ Схема готова |
-| **AI** | Groq + Gemini | ⏳ Нужна интеграция |
-| **Деплой** | Vercel | ⏳ Настроено |
+| **AI** | Groq + Gemini | ⏳ В планах |
+| **Деплой** | Vercel | ✅ Настроено |
 | **PWA** | Web Manifest | ✅ |
 | **Telegram** | Web App SDK | ✅ |
 
