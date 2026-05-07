@@ -44,3 +44,9 @@ out/
 
 .qwen/
 gha-creds-*.json
+.agents
+.claude
+ENV_SETUP.md
+PROJECT_SUMMARY.md
+QWEN.md
+Screenshot_2026-04-25-05-23-39-900_ir.ilmili.telegraph.png
