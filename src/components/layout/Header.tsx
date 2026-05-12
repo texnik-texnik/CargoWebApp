@@ -34,7 +34,7 @@ export function Header() {
             <h1 className="text-lg font-bold">Khuroson Cargo</h1>
           </div>
           {user ? (
-            <Link to="/profile">
+            <Link to="/">
               <div className="flex items-center gap-2 cursor-pointer">
                 <Avatar className="h-8 w-8 border-2 border-white/20">
                   <AvatarImage src={user.photo_url} alt={user.name || user.first_name} />

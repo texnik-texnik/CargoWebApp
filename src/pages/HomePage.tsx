@@ -59,7 +59,7 @@ export default function HomePage() {
     { icon: Info, label: t.prices, href: '/info/prices', color: 'text-green-500', bgColor: 'bg-green-500/10' },
     { icon: Ban, label: t.banned, href: '/info/banned', color: 'text-red-500', bgColor: 'bg-red-500/10' },
     { icon: ScrollText, label: t.terms, href: '/info/terms', color: 'text-purple-500', bgColor: 'bg-purple-500/10' },
-    { icon: User, label: t.profile, href: '/profile', color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
+    { icon: User, label: t.profile, href: '/', color: 'text-indigo-500', bgColor: 'bg-indigo-500/10' },
   ];
 
   // Статистика только для админов

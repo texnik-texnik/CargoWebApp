@@ -25,7 +25,8 @@ function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<ProfilePage />} />
+        <Route path="/home" element={<HomePage />} />
         <Route path="/tracks" element={<TracksPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/auth" element={<AuthPage />} />
