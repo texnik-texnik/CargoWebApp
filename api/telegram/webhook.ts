@@ -21,7 +21,7 @@ const MAIN_KEYBOARD = {
   resize_keyboard: true
 };
 
-const CHINA_ADDR_BASE = `浙江省金华市义乌市荷叶塘工業区东青路87号一楼 库房1号门-Khuroson`;
+const CHINA_ADDR_BASE = `浙江省金华市义乌市荷叶塘工業区东青路87号一楼 库房1号门-khuroson`;
 
 const transliterate = (text: string): string => {
   const mapping: { [key: string]: string } = {
@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (text === '🇨🇳 Суроғаи Чин') {
       const { data: user } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
       
-      let personalizedAddr = CHINA_ADDR_BASE;
+      let personalizedAddr = `${CHINA_ADDR_BASE}-ном-номер`;
       if (user && user.name && user.phone) {
         const phoneShort = user.phone.replace('+992', '').replace(/\s/g, '');
         const nameSlug = transliterate(user.name).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
