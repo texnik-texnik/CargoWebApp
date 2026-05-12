@@ -13,12 +13,14 @@ export function Header() {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // Проверяем есть ли сохранённый пользователь
+    // Приоритет: данные из localStorage (уже синхронизированные с БД)
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
+      return;
     }
 
+    // Если в localStorage пусто, пробуем взять из Telegram WebApp
     const tg = (window as any).Telegram?.WebApp;
     if (tg?.initDataUnsafe?.user) {
       setUser(tg.initDataUnsafe.user);
