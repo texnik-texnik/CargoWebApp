@@ -24,9 +24,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existingUser) {
       // Пользователь уже есть - обновляем данные если есть новые
       const updateData: any = {};
-      if (phone && !existingUser.phone) updateData.phone = phone;
-      if (name && !existingUser.name) updateData.name = name;
-      if (lang && !existingUser.lang) updateData.lang = lang;
+      if (phone) updateData.phone = phone;
+      if (name) updateData.name = name;
+      if (lang) updateData.lang = lang;
 
       let finalUser = existingUser;
       if (Object.keys(updateData).length > 0) {

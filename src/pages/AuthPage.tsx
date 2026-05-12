@@ -70,15 +70,19 @@ export default function AuthPage() {
       if (data.user.phone && data.user.name) {
         navigate('/');
       } else {
+        // Если нет телефона или имени - это процесс регистрации/дозаполнения
         const hasLang = localStorage.getItem('app_lang_set');
         if (!hasLang) {
           setStep('language');
         } else {
-          if (data.user.phone) {
-            setPhone(data.user.phone.replace('+992', ''));
-          }
           setStep('setup');
         }
+        
+        if (data.user.phone) {
+          setPhone(data.user.phone.replace('+992', ''));
+        }
+        
+        // Если в БД уже есть имя, используем его, иначе из ТГ
         setName(data.user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim());
       }
     } catch (err: any) {
