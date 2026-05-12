@@ -90,7 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let msg = '💰 <b>Тарифҳои интиқол:</b>\n\n';
       if (prices && prices.length > 0) {
         prices.forEach(p => {
-          msg += `• Аз ${p.weight_from} то ${p.weight_to || '...'} кг: <b>$${p.price}</b>\n`;
+          msg += `• Аз ${p.weight_from} то ${p.weight_to || '…'} кг: <b>${p.price} сомонӣ</b>\n`;
         });
       } else {
         msg += 'Маълумот дар бораи нархҳо ҳоло дастрас нест.';
