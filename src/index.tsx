@@ -5,6 +5,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import './index.css';
 import App from './App';
 
+// Trigger Vercel deployment after rollback
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
 );
